@@ -1,0 +1,2 @@
+As a website visitor, I want to be able to set events as favourites, so that I can easily access the events I am interested in.
+There should be a dedicated favourites page where I can view all my favourited events in a calendar like display.

@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}Termine - Kulturelle Landpartie{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Termine</h1>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <form id="filter-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Von Datum</label>
+                    <input
+                        type="date"
+                        id="start_date"
+                        name="start_date"
+                        value="{{ start_date if start_date else '' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Bis Datum</label>
+                    <input
+                        type="date"
+                        id="end_date"
+                        name="end_date"
+                        value="{{ end_date if end_date else '' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+
+                <div>
+                    <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Suche</label>
+                    <input
+                        type="text"
+                        id="search"
+                        name="search"
+                        value="{{ search if search else '' }}"
+                        placeholder="Name oder Beschreibung..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+
+                <div>
+                    <label for="location-search" class="block text-sm font-medium text-gray-700 mb-1">Ort</label>
+                    <div class="relative">
+                        <input
+                            type="text"
+                            id="location-search"
+                            placeholder="Ort suchen..."
+                            autocomplete="off"
+                            value="{% if selected_location %}{{ selected_location.name }}{% endif %}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            oninput="handleLocationInput(this.value)"
+                            onfocus="searchLocations(this.value)"
+                        >
+                        <input type="hidden" id="location_id" name="location_id" value="{{ location_id if location_id else '' }}">
+                        <div id="location-results" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="show_cancelled" class="block text-sm font-medium text-gray-700 mb-1">Abgesagte Termine</label>
+                    <select
+                        id="show_cancelled"
+                        name="show_cancelled"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="" {% if not show_cancelled %}selected{% endif %}>Alle anzeigen</option>
+                        <option value="hide" {% if show_cancelled == 'hide' %}selected{% endif %}>Ausblenden</option>
+                        <option value="only" {% if show_cancelled == 'only' %}selected{% endif %}>Nur Abgesagte</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="payment_types" class="block text-sm font-medium text-gray-700 mb-1">Eintrittsart</label>
+                    <div class="relative">
+                        <div id="payment-dropdown-trigger" class="w-full px-3 py-2 border border-gray-300 rounded-md cursor-pointer bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[42px]" onclick="togglePaymentDropdown()">
+                            <div id="selected-badges" class="flex flex-wrap gap-2">
+                                <span class="text-gray-400 text-sm" id="placeholder">Alle Eintrittsarten</span>
+                            </div>
+                        </div>
+                        <div id="payment-dropdown" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                            <div class="p-2 space-y-2">
+                                {% set selected_types = payment_types.split(',') if payment_types else [] %}
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" data-payment-type="free" value="free" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" {% if 'free' in selected_types %}checked{% endif %} onchange="updatePaymentBadges()">
+                                    <span class="ml-3 bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Eintritt frei</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" data-payment-type="hat_collection" value="hat_collection" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" {% if 'hat_collection' in selected_types %}checked{% endif %} onchange="updatePaymentBadges()">
+                                    <span class="ml-3 bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">Hutkasse</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" data-payment-type="fixed_price" value="fixed_price" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" {% if 'fixed_price' in selected_types %}checked{% endif %} onchange="updatePaymentBadges()">
+                                    <span class="ml-3 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Festpreis</span>
+                                </label>
+                                <label class="flex items-center p-2 hover:bg-gray-50 rounded cursor-pointer">
+                                    <input type="checkbox" data-payment-type="hat_plus_materials" value="hat_plus_materials" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" {% if 'hat_plus_materials' in selected_types %}checked{% endif %} onchange="updatePaymentBadges()">
+                                    <span class="ml-3 bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">Hutkasse + Material</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button
+                    type="button"
+                    hx-get="/events/list?page=1"
+                    hx-target="#event-list"
+                    hx-swap="outerHTML"
+                    hx-include="#filter-form"
+                    hx-indicator="#loading"
+                    class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    Filtern
+                </button>
+                <button
+                    type="button"
+                    onclick="clearFilters()"
+                    class="bg-gray-200 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-gray-400"
+                >
+                    Zurücksetzen
+                </button>
+            </div>
+        </form>
+
+        <div id="loading" class="htmx-indicator mt-4">
+            <div class="flex items-center text-blue-600">
+                <svg class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Lade...
+            </div>
+        </div>
+    </div>
+
+    <div id="event-list">
+        {% include "partials/event_list.html" %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const paymentTypeLabels = {
+        'free': { text: 'Eintritt frei', classes: 'bg-green-100 text-green-800' },
+        'hat_collection': { text: 'Hutkasse', classes: 'bg-yellow-100 text-yellow-800' },
+        'fixed_price': { text: 'Festpreis', classes: 'bg-blue-100 text-blue-800' },
+        'hat_plus_materials': { text: 'Hutkasse + Material', classes: 'bg-yellow-100 text-yellow-800' }
+    };
+
+    function togglePaymentDropdown() {
+        const dropdown = document.getElementById('payment-dropdown');
+        dropdown.classList.toggle('hidden');
+    }
+
+    function updatePaymentBadges() {
+        const checkboxes = document.querySelectorAll('input[data-payment-type]:checked');
+        const container = document.getElementById('selected-badges');
+        const placeholder = document.getElementById('placeholder');
+
+        container.innerHTML = '';
+
+        if (checkboxes.length === 0) {
+            placeholder.classList.remove('hidden');
+            container.appendChild(placeholder);
+        } else {
+            checkboxes.forEach(cb => {
+                const info = paymentTypeLabels[cb.value];
+                const badge = document.createElement('span');
+                badge.className = `${info.classes} text-xs font-medium px-2.5 py-0.5 rounded`;
+                badge.textContent = info.text;
+                container.appendChild(badge);
+            });
+        }
+    }
+
+    let locationSearchTimeout = null;
+
+    function handleLocationInput(value) {
+        const currentLocationId = document.getElementById('location_id').value;
+        const currentLocationName = document.getElementById('location-search').dataset.selectedName || '';
+
+        if (value !== currentLocationName) {
+            document.getElementById('location_id').value = '';
+        }
+
+        searchLocations(value);
+    }
+
+    function searchLocations(query) {
+        clearTimeout(locationSearchTimeout);
+
+        locationSearchTimeout = setTimeout(async () => {
+            const results = document.getElementById('location-results');
+
+            if (!query || query.trim().length === 0) {
+                try {
+                    const response = await fetch('/api/locations/search?q=');
+                    const locations = await response.json();
+                    displayLocationResults(locations);
+                } catch (error) {
+                    console.error('Error fetching locations:', error);
+                }
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/locations/search?q=${encodeURIComponent(query)}`);
+                const locations = await response.json();
+                displayLocationResults(locations);
+            } catch (error) {
+                console.error('Error searching locations:', error);
+            }
+        }, 300);
+    }
+
+    function displayLocationResults(locations) {
+        const results = document.getElementById('location-results');
+
+        if (locations.length === 0) {
+            results.innerHTML = '<div class="p-3 text-sm text-gray-500">Keine Orte gefunden</div>';
+            results.classList.remove('hidden');
+            return;
+        }
+
+        results.innerHTML = locations.map(loc => `
+            <div class="p-3 hover:bg-gray-50 cursor-pointer border-b last:border-b-0" onclick="selectLocation(${loc.id}, '${loc.name.replace(/'/g, "\\'")}')">
+                <div class="font-medium text-gray-900">${loc.name}</div>
+                ${loc.subtitle ? `<div class="text-xs text-gray-500">${loc.subtitle}</div>` : ''}
+            </div>
+        `).join('');
+        results.classList.remove('hidden');
+    }
+
+    function selectLocation(id, name) {
+        const searchInput = document.getElementById('location-search');
+        searchInput.value = name;
+        searchInput.dataset.selectedName = name;
+        document.getElementById('location_id').value = id;
+        document.getElementById('location-results').classList.add('hidden');
+    }
+
+    function clearFilters() {
+        document.getElementById('start_date').value = '{{ default_start_date }}';
+        document.getElementById('end_date').value = '{{ default_end_date }}';
+        document.getElementById('search').value = '';
+        document.getElementById('show_cancelled').value = '';
+        const locationSearch = document.getElementById('location-search');
+        locationSearch.value = '';
+        locationSearch.dataset.selectedName = '';
+        document.getElementById('location_id').value = '';
+        document.querySelectorAll('input[data-payment-type]').forEach(cb => cb.checked = false);
+        updatePaymentBadges();
+        htmx.trigger('#filter-form button[hx-get]', 'click');
+    }
+
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('payment-dropdown');
+        const trigger = document.getElementById('payment-dropdown-trigger');
+        const locationResults = document.getElementById('location-results');
+        const locationSearch = document.getElementById('location-search');
+
+        if (!trigger.contains(event.target) && !dropdown.contains(event.target)) {
+            dropdown.classList.add('hidden');
+        }
+
+        if (!locationSearch.contains(event.target) && !locationResults.contains(event.target)) {
+            locationResults.classList.add('hidden');
+        }
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updatePaymentBadges();
+    });
+
+    function toggleFavorite(eventId) {
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        const index = favorites.indexOf(eventId);
+        const btn = document.querySelector(`button[data-event-id="${eventId}"]`);
+        const icon = btn.querySelector('.favorite-icon');
+
+        if (index > -1) {
+            favorites.splice(index, 1);
+            icon.classList.remove('text-red-500');
+            icon.classList.add('text-gray-400');
+            icon.setAttribute('fill', 'none');
+        } else {
+            favorites.push(eventId);
+            icon.classList.remove('text-gray-400');
+            icon.classList.add('text-red-500');
+            icon.setAttribute('fill', 'currentColor');
+        }
+
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+
+    function initializeFavorites() {
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        favorites.forEach(eventId => {
+            const btn = document.querySelector(`button[data-event-id="${eventId}"]`);
+            if (btn) {
+                const icon = btn.querySelector('.favorite-icon');
+                icon.classList.remove('text-gray-400');
+                icon.classList.add('text-red-500');
+                icon.setAttribute('fill', 'currentColor');
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', initializeFavorites);
+
+    document.body.addEventListener('htmx:afterSwap', function(event) {
+        if (event.detail.target.id === 'event-list' || event.detail.target.id === 'load-more-trigger') {
+            initializeFavorites();
+        }
+    });
+
+    document.body.addEventListener('htmx:configRequest', function(event) {
+        if (event.detail.path.includes('/events/list')) {
+            const checkboxes = document.querySelectorAll('input[data-payment-type]:checked');
+            const values = Array.from(checkboxes).map(cb => cb.value);
+
+            if (values.length > 0) {
+                event.detail.parameters['payment_types'] = values.join(',');
+            } else {
+                delete event.detail.parameters['payment_types'];
+            }
+
+            const locationId = event.detail.parameters['location_id'];
+            if (!locationId || locationId === '') {
+                delete event.detail.parameters['location_id'];
+            }
+        }
+    });
+</script>
+{% endblock %}

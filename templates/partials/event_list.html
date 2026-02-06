@@ -1,0 +1,143 @@
+<div id="event-list">
+{% if occurrences %}
+    <div class="mb-4 text-sm text-gray-600">
+        <span class="font-medium">{{ total }}</span> {% if total == 1 %}Termin gefunden{% else %}Termine gefunden{% endif %}
+    </div>
+    {% for item in occurrences %}
+    {% set occurrence = item.occurrence %}
+    {% set event = item.event %}
+    {% set location = item.location %}
+
+    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition mb-4 {% if occurrence.is_cancelled %}bg-gray-50{% endif %}">
+        <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4 {% if occurrence.is_cancelled %}text-gray-500{% endif %}">
+            <div class="flex-1">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0">
+                        <div class="{% if occurrence.is_cancelled %}bg-gray-200 text-gray-600{% else %}bg-blue-100 text-blue-800{% endif %} px-3 py-2 rounded-md text-center min-w-[80px]">
+                            <div class="text-xs font-medium">{{ occurrence.start_datetime.strftime('%d.%m.%Y') }}</div>
+                            <div class="text-lg font-bold">{{ occurrence.start_datetime.strftime('%H:%M') }}</div>
+                        </div>
+                    </div>
+
+                    <div class="flex-1">
+                        <h3 class="text-xl font-semibold mb-2 {% if occurrence.is_cancelled %}line-through text-gray-500{% else %}text-gray-900{% endif %}">
+                            {{ event.name }}
+                        </h3>
+
+                        {% if occurrence.is_cancelled %}
+                        <span class="inline-block bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded mb-2">
+                            Fällt leider aus
+                        </span>
+                        {% endif %}
+
+                        {% if event.description %}
+                        <p class="mb-3 {% if occurrence.is_cancelled %}text-gray-500 line-through{% else %}text-gray-600{% endif %}">{{ event.description }}</p>
+                        {% endif %}
+
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            {% if event.payment_type == 'free' %}
+                            <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                Eintritt frei
+                            </span>
+                            {% elif event.payment_type == 'hat_collection' %}
+                            <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                Hutkasse
+                            </span>
+                            {% elif event.payment_type == 'fixed_price' and event.entry_price %}
+                            <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                {{ event.entry_price }} €
+                            </span>
+                            {% elif event.payment_type == 'hat_plus_materials' %}
+                            <span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                Hutkasse{% if event.material_cost %} + {{ event.material_cost }} € Material{% endif %}
+                            </span>
+                            {% endif %}
+
+                            {% if event.booking_required %}
+                            <span class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                                Anmeldung erforderlich
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-sm {% if occurrence.is_cancelled %}text-gray-500{% else %}text-gray-700{% endif %}">
+                            <span class="font-medium">Ort:</span>
+                            <a href="/locations/{{ location.id }}" class="{% if occurrence.is_cancelled %}text-gray-500 hover:text-gray-600{% else %}text-blue-600 hover:text-blue-800{% endif %} hover:underline {% if occurrence.is_cancelled %}line-through{% endif %}">
+                                {{ location.name }}
+                            </a>
+                            {% if location.subtitle %}
+                            <span class="{% if occurrence.is_cancelled %}text-gray-400 line-through{% else %}text-gray-500{% endif %}"> - {{ location.subtitle }}</span>
+                            {% endif %}
+                        </div>
+
+                        {% if event.organizer %}
+                        <div class="text-sm mt-1 {% if occurrence.is_cancelled %}text-gray-500 line-through{% else %}text-gray-600{% endif %}">
+                            <span class="font-medium">Veranstalter:</span> {{ event.organizer }}
+                        </div>
+                        {% endif %}
+
+                        {% if item.other_occurrences and item.other_occurrences|length > 0 %}
+                        <div class="text-sm mt-2 text-gray-600 border-t pt-2">
+                            <span class="font-medium">Findet auch statt am:</span>
+                            <div class="flex flex-wrap gap-1 mt-1">
+                                {% for other_occ in item.other_occurrences[:5] %}
+                                <span class="bg-gray-100 text-gray-700 text-xs px-2 py-0.5 rounded">
+                                    {{ other_occ.start_datetime.strftime('%d.%m.%Y %H:%M') }}
+                                </span>
+                                {% endfor %}
+                                {% if item.other_occurrences|length > 5 %}
+                                <span class="text-xs text-gray-500 px-2 py-0.5">
+                                    +{{ item.other_occurrences|length - 5 }} weitere
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex-shrink-0">
+                <button
+                    onclick="toggleFavorite({{ occurrence.id }})"
+                    class="favorite-btn p-2 rounded-full hover:bg-gray-100 transition"
+                    data-event-id="{{ occurrence.id }}"
+                >
+                    <svg class="w-6 h-6 text-gray-400 favorite-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+{% if has_more %}
+<div id="load-more-trigger"
+     hx-get="/events/list?page={{ page + 1 }}{% if start_date %}&start_date={{ start_date }}{% endif %}{% if end_date %}&end_date={{ end_date }}{% endif %}{% if search %}&search={{ search }}{% endif %}{% if show_cancelled %}&show_cancelled={{ show_cancelled }}{% endif %}{% if payment_types %}&payment_types={{ payment_types }}{% endif %}{% if location_id %}&location_id={{ location_id }}{% endif %}"
+     hx-trigger="intersect once"
+     hx-swap="beforebegin"
+     hx-target="#load-more-trigger"
+     hx-indicator="#loading-more">
+    <div id="loading-more" class="text-center py-8">
+        <div class="inline-flex items-center text-blue-600">
+            <svg class="animate-spin h-8 w-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span class="text-lg">Weitere Termine laden...</span>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="bg-white rounded-lg shadow-md p-12 text-center">
+    <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+    </svg>
+    <h3 class="text-lg font-medium text-gray-900 mb-2">Keine Termine gefunden</h3>
+    <p class="text-gray-600">Es wurden keine Termine gefunden, die Ihren Filterkriterien entsprechen.</p>
+</div>
+{% endif %}
+</div>
