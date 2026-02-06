@@ -29,6 +29,7 @@ class Location(SQLModel, table=True):
     latitude: float
     longitude: float
     google_maps_link: Optional[str] = Field(default=None)
+    original_page_url: Optional[str] = Field(default=None)
     links: Optional[list[str]] = Field(default=None, sa_column=Column(ARRAY(String)))
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

@@ -117,6 +117,7 @@
                     hx-swap="outerHTML"
                     hx-include="#filter-form"
                     hx-indicator="#loading"
+                    onclick="saveFiltersToStorage()"
                     class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                     Filtern
@@ -249,6 +250,49 @@
         document.getElementById('location-results').classList.add('hidden');
     }
 
+    function saveFiltersToStorage() {
+        const filters = {
+            start_date: document.getElementById('start_date').value,
+            end_date: document.getElementById('end_date').value,
+            search: document.getElementById('search').value,
+            show_cancelled: document.getElementById('show_cancelled').value,
+            location_id: document.getElementById('location_id').value,
+            location_name: document.getElementById('location-search').value,
+            payment_types: Array.from(document.querySelectorAll('input[data-payment-type]:checked')).map(cb => cb.value).join(',')
+        };
+        localStorage.setItem('event_filters', JSON.stringify(filters));
+    }
+
+    function loadFiltersFromStorage() {
+        const hasUrlParams = window.location.search.length > 1;
+        if (hasUrlParams) {
+            saveFiltersToStorage();
+            return;
+        }
+
+        const stored = localStorage.getItem('event_filters');
+        if (!stored) return;
+
+        const filters = JSON.parse(stored);
+        if (filters.start_date) document.getElementById('start_date').value = filters.start_date;
+        if (filters.end_date) document.getElementById('end_date').value = filters.end_date;
+        if (filters.search) document.getElementById('search').value = filters.search;
+        if (filters.show_cancelled) document.getElementById('show_cancelled').value = filters.show_cancelled;
+        if (filters.location_id) {
+            document.getElementById('location_id').value = filters.location_id;
+            document.getElementById('location-search').value = filters.location_name || '';
+            document.getElementById('location-search').dataset.selectedName = filters.location_name || '';
+        }
+        if (filters.payment_types) {
+            const types = filters.payment_types.split(',');
+            types.forEach(type => {
+                const checkbox = document.querySelector(`input[data-payment-type="${type}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+            updatePaymentBadges();
+        }
+    }
+
     function clearFilters() {
         document.getElementById('start_date').value = '{{ default_start_date }}';
         document.getElementById('end_date').value = '{{ default_end_date }}';
@@ -260,6 +304,7 @@
         document.getElementById('location_id').value = '';
         document.querySelectorAll('input[data-payment-type]').forEach(cb => cb.checked = false);
         updatePaymentBadges();
+        localStorage.removeItem('event_filters');
         htmx.trigger('#filter-form button[hx-get]', 'click');
     }
 
@@ -279,7 +324,15 @@
     });
 
     document.addEventListener('DOMContentLoaded', function() {
+        loadFiltersFromStorage();
         updatePaymentBadges();
+    });
+
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            loadFiltersFromStorage();
+            updatePaymentBadges();
+        }
     });
 
     function toggleFavorite(eventId) {

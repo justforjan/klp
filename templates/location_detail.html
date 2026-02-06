@@ -51,6 +51,17 @@
             </div>
             {% endif %}
 
+            {% if location.original_page_url %}
+            <div class="flex items-start">
+                <svg class="w-5 h-5 text-gray-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+                </svg>
+                <a href="{{ location.original_page_url }}" target="_blank" class="text-blue-600 hover:text-blue-800">
+                    Zur Originalseite →
+                </a>
+            </div>
+            {% endif %}
+
             {% if location.links %}
             <div class="flex items-start">
                 <svg class="w-5 h-5 text-gray-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -64,6 +75,52 @@
             </div>
             {% endif %}
         </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Zeitraum filtern</h2>
+        <form method="get" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 mb-1">Von Datum</label>
+                    <input
+                        type="date"
+                        id="start_date"
+                        name="start_date"
+                        value="{{ start_date if start_date else '' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 mb-1">Bis Datum</label>
+                    <input
+                        type="date"
+                        id="end_date"
+                        name="end_date"
+                        value="{{ end_date if end_date else '' }}"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button
+                    type="submit"
+                    onclick="saveFiltersToStorage()"
+                    class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    Filtern
+                </button>
+                <button
+                    type="button"
+                    onclick="clearFilters()"
+                    class="bg-gray-200 text-gray-700 px-6 py-2 rounded-md hover:bg-gray-300 transition focus:outline-none focus:ring-2 focus:ring-gray-400"
+                >
+                    Zurücksetzen
+                </button>
+            </div>
+        </form>
     </div>
 
     <div class="bg-white rounded-lg shadow-md p-6">
@@ -81,11 +138,12 @@
                     {% set occurrence = item.occurrence %}
                     {% set event = item.event %}
                     <div class="bg-gray-50 rounded-lg p-4 {% if occurrence.is_cancelled %}bg-gray-100{% endif %}">
-                        <div class="flex items-start gap-3">
-                            <div class="flex-shrink-0 bg-blue-100 text-blue-800 px-3 py-1 rounded text-center min-w-[60px]">
-                                <div class="text-sm font-bold">{{ occurrence.start_datetime.strftime('%H:%M') }}</div>
-                            </div>
-                            <div class="flex-1">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-3 flex-1">
+                                <div class="flex-shrink-0 bg-blue-100 text-blue-800 px-3 py-1 rounded text-center min-w-[60px]">
+                                    <div class="text-sm font-bold">{{ occurrence.start_datetime.strftime('%H:%M') }}</div>
+                                </div>
+                                <div class="flex-1">
                                 <h4 class="font-semibold mb-1 {% if occurrence.is_cancelled %}line-through text-gray-500{% else %}text-gray-900{% endif %}">
                                     {{ event.name }}
                                 </h4>
@@ -133,6 +191,19 @@
                                     Veranstalter: {{ event.organizer }}
                                 </p>
                                 {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="flex-shrink-0">
+                                <button
+                                    onclick="toggleFavorite({{ occurrence.id }})"
+                                    class="favorite-btn p-2 rounded-full hover:bg-gray-100 transition"
+                                    data-event-id="{{ occurrence.id }}"
+                                >
+                                    <svg class="w-6 h-6 text-gray-400 favorite-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -152,4 +223,99 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function loadFiltersFromStorage() {
+        const hasUrlParams = window.location.search.length > 1;
+        if (hasUrlParams) return;
+
+        const stored = localStorage.getItem('event_filters');
+        if (!stored) return;
+
+        const filters = JSON.parse(stored);
+        if (filters.start_date) document.getElementById('start_date').value = filters.start_date;
+        if (filters.end_date) document.getElementById('end_date').value = filters.end_date;
+    }
+
+    function saveFiltersToStorage() {
+        const filters = {
+            start_date: document.getElementById('start_date').value,
+            end_date: document.getElementById('end_date').value
+        };
+
+        const existingFilters = localStorage.getItem('event_filters');
+        if (existingFilters) {
+            const existing = JSON.parse(existingFilters);
+            filters.search = existing.search || '';
+            filters.show_cancelled = existing.show_cancelled || '';
+            filters.location_id = existing.location_id || '';
+            filters.location_name = existing.location_name || '';
+            filters.payment_types = existing.payment_types || '';
+        }
+
+        localStorage.setItem('event_filters', JSON.stringify(filters));
+    }
+
+    function clearFilters() {
+        document.getElementById('start_date').value = '{{ default_start_date }}';
+        document.getElementById('end_date').value = '{{ default_end_date }}';
+
+        const existingFilters = localStorage.getItem('event_filters');
+        if (existingFilters) {
+            const filters = JSON.parse(existingFilters);
+            filters.start_date = '{{ default_start_date }}';
+            filters.end_date = '{{ default_end_date }}';
+            localStorage.setItem('event_filters', JSON.stringify(filters));
+        }
+
+        document.querySelector('form').submit();
+    }
+
+    function toggleFavorite(eventId) {
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        const index = favorites.indexOf(eventId);
+        const btn = document.querySelector(`button[data-event-id="${eventId}"]`);
+        const icon = btn.querySelector('.favorite-icon');
+
+        if (index > -1) {
+            favorites.splice(index, 1);
+            icon.classList.remove('text-red-500');
+            icon.classList.add('text-gray-400');
+            icon.setAttribute('fill', 'none');
+        } else {
+            favorites.push(eventId);
+            icon.classList.remove('text-gray-400');
+            icon.classList.add('text-red-500');
+            icon.setAttribute('fill', 'currentColor');
+        }
+
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+
+    function initializeFavorites() {
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        favorites.forEach(eventId => {
+            const btn = document.querySelector(`button[data-event-id="${eventId}"]`);
+            if (btn) {
+                const icon = btn.querySelector('.favorite-icon');
+                icon.classList.remove('text-gray-400');
+                icon.classList.add('text-red-500');
+                icon.setAttribute('fill', 'currentColor');
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeFavorites();
+        loadFiltersFromStorage();
+    });
+
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            loadFiltersFromStorage();
+        }
+    });
+</script>
 {% endblock %}

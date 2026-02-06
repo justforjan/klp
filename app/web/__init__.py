@@ -283,6 +283,8 @@ async def locations_page(
 async def location_detail_page(
     request: Request,
     location_id: int,
+    start_date: Optional[str] = Query(default=None),
+    end_date: Optional[str] = Query(default=None),
     session: Session = Depends(get_session),
 ):
     location = session.get(Location, location_id)
@@ -293,12 +295,40 @@ async def location_detail_page(
             status_code=404,
         )
 
+    has_query_params = any(param is not None for param in [
+        request.query_params.get('start_date'),
+        request.query_params.get('end_date')
+    ])
+
+    if not has_query_params:
+        start_date = settings.start_date
+        end_date = settings.end_date
+    else:
+        start_date = start_date or ""
+        end_date = end_date or ""
+
+    parsed_start_date = None if not start_date or start_date.strip() == "" else date.fromisoformat(start_date)
+    parsed_end_date = None if not end_date or end_date.strip() == "" else date.fromisoformat(end_date)
+
     query = (
         select(EventOccurrence, Event)
         .join(Event, EventOccurrence.event_id == Event.id)
         .where(Event.location_id == location_id)
-        .order_by(EventOccurrence.start_datetime.asc())
     )
+
+    filters = []
+    if parsed_start_date:
+        start_datetime = datetime.combine(parsed_start_date, datetime.min.time())
+        filters.append(EventOccurrence.start_datetime >= start_datetime)
+
+    if parsed_end_date:
+        end_datetime = datetime.combine(parsed_end_date, datetime.max.time())
+        filters.append(EventOccurrence.start_datetime <= end_datetime)
+
+    if filters:
+        query = query.where(and_(*filters))
+
+    query = query.order_by(EventOccurrence.start_datetime.asc())
     results = session.exec(query).all()
 
     cancellation_phrases = ["fällt aus", "fällt leider aus", "fällt weg"]
@@ -333,8 +363,96 @@ async def location_detail_page(
             "request": request,
             "location": location,
             "events_by_date": events_by_date,
+            "start_date": start_date,
+            "end_date": end_date,
+            "default_start_date": settings.start_date,
+            "default_end_date": settings.end_date,
         },
     )
+
+
+@router.get("/favourites", response_class=HTMLResponse)
+async def favourites_page(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    return templates.TemplateResponse(
+        "favourites.html",
+        {
+            "request": request,
+        },
+    )
+
+
+@router.get("/api/favourites/events")
+async def get_favourite_events(
+    ids: str = Query(...),
+    session: Session = Depends(get_session),
+):
+    if not ids:
+        return JSONResponse([])
+
+    try:
+        occurrence_ids = [int(id_str) for id_str in ids.split(',') if id_str.strip()]
+    except ValueError:
+        return JSONResponse([])
+
+    if not occurrence_ids:
+        return JSONResponse([])
+
+    query = (
+        select(EventOccurrence, Event, Location)
+        .join(Event, EventOccurrence.event_id == Event.id)
+        .join(Location, Event.location_id == Location.id)
+        .where(EventOccurrence.id.in_(occurrence_ids))
+        .order_by(EventOccurrence.start_datetime.asc())
+    )
+    results = session.exec(query).all()
+
+    cancellation_phrases = ["fällt aus", "fällt leider aus", "fällt weg"]
+
+    events_by_date = {}
+    for occurrence, event, location in results:
+        is_cancelled = False
+        if event.name:
+            name_lower = event.name.lower()
+            if any(phrase in name_lower for phrase in cancellation_phrases):
+                is_cancelled = True
+        if not is_cancelled and event.description:
+            description_lower = event.description.lower()
+            if any(phrase in description_lower for phrase in cancellation_phrases):
+                is_cancelled = True
+
+        if is_cancelled:
+            occurrence.is_cancelled = True
+
+        event_date = occurrence.start_datetime.date().isoformat()
+        if event_date not in events_by_date:
+            events_by_date[event_date] = []
+
+        events_by_date[event_date].append({
+            "occurrence": {
+                "id": occurrence.id,
+                "start_datetime": occurrence.start_datetime.isoformat(),
+                "is_cancelled": occurrence.is_cancelled,
+            },
+            "event": {
+                "name": event.name,
+                "description": event.description,
+                "payment_type": event.payment_type,
+                "entry_price": float(event.entry_price) if event.entry_price else None,
+                "material_cost": float(event.material_cost) if event.material_cost else None,
+                "booking_required": event.booking_required,
+                "organizer": event.organizer,
+            },
+            "location": {
+                "id": location.id,
+                "name": location.name,
+                "subtitle": location.subtitle,
+            }
+        })
+
+    return JSONResponse(events_by_date)
 
 
 @router.get("/api/locations/search")

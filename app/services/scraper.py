@@ -33,8 +33,12 @@ async def run_initial_import():
             except Exception as e:
                 print(f"Error scraping events for {date_str}: {e}")
 
-    print(f"Scraped {len(all_events_data)} events. Starting batch insert...")
-    batch_insert_events(all_events_data)
+        print(f"Scraped {len(all_events_data)} events. Starting batch insert...")
+        batch_insert_events(all_events_data)
+
+        print("Starting location details scraping...")
+        await scrape_all_location_details(client)
+
     print("Data import completed")
 
 
@@ -204,12 +208,15 @@ def batch_insert_events(events_data: list[dict]):
         locations = []
         for event_data in events_data:
             location_name = event_data['location_name']
+            location_slug = event_data['location_slug']
             if location_name not in location_map:
+                original_page_url = f"{BASE_URL}/orte/{location_slug}.html" if location_slug else None
                 location = Location(
                     name=location_name,
-                    address=f"Location address for {event_data['location_slug']}",
+                    address=f"Location address for {location_slug}",
                     latitude=0.0,
                     longitude=0.0,
+                    original_page_url=original_page_url,
                 )
                 locations.append(location)
                 location_map[location_name] = location
@@ -254,3 +261,107 @@ def batch_insert_events(events_data: list[dict]):
         session.commit()
 
         print(f"Inserted {len(locations)} locations, {len(events)} events, {len(occurrences)} occurrences")
+
+
+async def scrape_all_location_details(client: httpx.AsyncClient):
+    with Session(engine) as session:
+        locations = session.exec(select(Location)).all()
+
+        for location in locations:
+            if not location.original_page_url:
+                continue
+
+            print(f"Scraping details for {location.name}...")
+            try:
+                details = await scrape_location_details(client, location)
+                if details:
+                    if 'subtitle' in details:
+                        location.subtitle = details['subtitle']
+                    if 'address' in details:
+                        location.address = details['address']
+                    if 'phone' in details:
+                        location.phone = details['phone']
+                    if 'email' in details:
+                        location.email = details['email']
+                    if 'links' in details:
+                        location.links = details['links']
+
+                    session.add(location)
+                    session.commit()
+            except Exception as e:
+                print(f"Error scraping location details for {location.name}: {e}")
+                session.rollback()
+
+
+async def scrape_location_details(client: httpx.AsyncClient, location: Location) -> dict:
+    try:
+        response = await client.get(location.original_page_url, timeout=10.0)
+        response.raise_for_status()
+    except Exception as e:
+        print(f"Error fetching {location.original_page_url}: {e}")
+        return {}
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    data = {}
+
+    h3 = soup.find('h3')
+    if h3:
+        data['subtitle'] = h3.get_text(strip=True)
+
+    comblock = soup.find('div', id='comblock')
+    if not comblock:
+        return data
+
+    all_mailto_links = comblock.find_all('a', href=re.compile(r'^mailto:'))
+    email = None
+    for mailto_link in all_mailto_links:
+        href = mailto_link.get('href', '')
+        email_from_href = href.replace('mailto:', '').strip()
+        if '@' in email_from_href:
+            email = email_from_href
+            break
+
+    paragraphs = comblock.find_all('p')
+    address_parts = []
+    phone = None
+    links = []
+
+    for i, p in enumerate(paragraphs):
+        text = p.get_text(strip=True)
+
+        phone_match = re.search(r'Fon\s+(\+?[\d\s-]+)', text, re.IGNORECASE)
+        if phone_match:
+            phone = phone_match.group(1).strip()
+            continue
+
+        web_links = p.find_all('a', target='_blank')
+        for link in web_links:
+            href = link.get('href', '')
+            if href and not href.startswith('mailto:'):
+                links.append(href)
+
+        if web_links or phone_match:
+            continue
+
+        if i > 0 and '<br' in str(p).lower():
+            br_parts = []
+            for content in p.stripped_strings:
+                if content and len(content) > 2:
+                    br_parts.append(content)
+
+            if len(br_parts) >= 2:
+                for part in br_parts:
+                    if '&' not in part and not any(x in part.lower() for x in ['fon', 'mail', 'e.v.', 'gbr']):
+                        address_parts.append(part)
+
+    if address_parts:
+        data['address'] = ', '.join(address_parts[:2])
+
+    if phone:
+        data['phone'] = phone
+    if email:
+        data['email'] = email
+    if links:
+        data['links'] = links
+
+    return data
