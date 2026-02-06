@@ -43,6 +43,7 @@ def upgrade() -> None:
     sa.Column('longitude', sa.Float(), nullable=False),
     sa.Column('google_maps_link', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('original_page_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('image_path', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('links', sa.ARRAY(sa.String()), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )

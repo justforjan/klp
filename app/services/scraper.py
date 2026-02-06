@@ -9,6 +9,7 @@ from app.models.location import Location
 from app.models.bike_tour import BikeTour
 import re
 from typing import Optional
+from pathlib import Path
 
 from app.core.config import settings
 
@@ -288,9 +289,45 @@ async def scrape_all_location_details(client: httpx.AsyncClient):
 
                     session.add(location)
                     session.commit()
+
+                    if 'image_url' in details and not location.image_path:
+                        location_slug = location.original_page_url.split('/')[-1].replace('.html', '') if location.original_page_url else f"location_{location.id}"
+                        print(f"Downloading image for {location.name}...")
+                        image_path = await download_location_image(client, details['image_url'], location_slug)
+                        if image_path:
+                            location.image_path = image_path
+                            session.add(location)
+                            session.commit()
+                            print(f"Downloaded image for {location.name}")
+                        else:
+                            print(f"Failed to download image for {location.name}")
             except Exception as e:
                 print(f"Error scraping location details for {location.name}: {e}")
                 session.rollback()
+
+
+async def download_location_image(client: httpx.AsyncClient, image_url: str, location_slug: str) -> Optional[str]:
+    try:
+        if not image_url.startswith('http'):
+            image_url = f"{BASE_URL}{image_url}"
+
+        response = await client.get(image_url, timeout=10.0)
+        response.raise_for_status()
+
+        static_dir = Path("static/locations")
+        static_dir.mkdir(parents=True, exist_ok=True)
+
+        image_ext = Path(image_url.split('?')[0]).suffix or '.jpg'
+        image_filename = f"{location_slug}{image_ext}"
+        image_path = static_dir / image_filename
+
+        with open(image_path, 'wb') as f:
+            f.write(response.content)
+
+        return f"/static/locations/{image_filename}"
+    except Exception as e:
+        print(f"Error downloading image from {image_url}: {e}")
+        return None
 
 
 async def scrape_location_details(client: httpx.AsyncClient, location: Location) -> dict:
@@ -311,6 +348,12 @@ async def scrape_location_details(client: httpx.AsyncClient, location: Location)
     comblock = soup.find('div', id='comblock')
     if not comblock:
         return data
+
+    img_div = comblock.find('div', class_='img')
+    if img_div:
+        img_tag = img_div.find('img')
+        if img_tag and img_tag.get('src'):
+            data['image_url'] = img_tag.get('src')
 
     all_mailto_links = comblock.find_all('a', href=re.compile(r'^mailto:'))
     email = None
