@@ -83,6 +83,62 @@
         </div>
     </div>
 
+    {% if exhibitions %}
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Ausstellungen</h2>
+
+        <div class="relative">
+            <div id="exhibition-carousel" class="flex overflow-x-auto scroll-smooth snap-x snap-mandatory gap-4 pb-4" style="scrollbar-width: thin;">
+                {% for exhibition in exhibitions %}
+                <div class="flex-shrink-0 w-80 snap-start bg-gray-50 rounded-lg overflow-hidden border border-gray-200">
+                    {% if exhibition.image_path %}
+                    <div class="h-48 overflow-hidden bg-gray-200">
+                        <img src="{{ exhibition.image_path }}" alt="{{ exhibition.name }}" class="w-full h-full object-cover">
+                    </div>
+                    {% endif %}
+
+                    <div class="p-4">
+                        <h3 class="font-bold text-lg text-gray-900 mb-1">{{ exhibition.name }}</h3>
+                        <p class="text-sm text-gray-600 mb-2">
+                            von
+                            {% if exhibition.artist_page_url %}
+                            <a href="https://www.kulturelle-landpartie.de{{ exhibition.artist_page_url }}" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline">
+                                {{ exhibition.artist }}
+                            </a>
+                            {% else %}
+                            <span class="font-medium">{{ exhibition.artist }}</span>
+                            {% endif %}
+                        </p>
+                        {% if exhibition.description %}
+                        <p class="text-sm text-gray-700 italic">{{ exhibition.description }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button
+                id="carousel-prev"
+                class="hidden absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition z-10"
+                onclick="scrollCarousel(-1)"
+            >
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+            </button>
+            <button
+                id="carousel-next"
+                class="hidden absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 bg-white rounded-full p-2 shadow-lg hover:bg-gray-100 transition z-10"
+                onclick="scrollCarousel(1)"
+            >
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="bg-white rounded-lg shadow-md p-6 mb-6">
         <h2 class="text-xl font-semibold text-gray-900 mb-4">Zeitraum filtern</h2>
         <form method="get" class="space-y-4">
@@ -242,6 +298,47 @@
 
 {% block extra_scripts %}
 <script>
+    function updateCarouselArrows() {
+        const carousel = document.getElementById('exhibition-carousel');
+        if (!carousel) return;
+
+        const prevBtn = document.getElementById('carousel-prev');
+        const nextBtn = document.getElementById('carousel-next');
+
+        if (!prevBtn || !nextBtn) return;
+
+        const scrollLeft = carousel.scrollLeft;
+        const scrollWidth = carousel.scrollWidth;
+        const clientWidth = carousel.clientWidth;
+        const maxScroll = scrollWidth - clientWidth;
+
+        if (scrollLeft <= 5) {
+            prevBtn.classList.add('hidden');
+        } else {
+            prevBtn.classList.remove('hidden');
+        }
+
+        if (scrollLeft >= maxScroll - 5) {
+            nextBtn.classList.add('hidden');
+        } else {
+            nextBtn.classList.remove('hidden');
+        }
+
+        if (maxScroll <= 0) {
+            prevBtn.classList.add('hidden');
+            nextBtn.classList.add('hidden');
+        }
+    }
+
+    function scrollCarousel(direction) {
+        const carousel = document.getElementById('exhibition-carousel');
+        const cardWidth = 320 + 16;
+        carousel.scrollBy({
+            left: direction * cardWidth,
+            behavior: 'smooth'
+        });
+    }
+
     function loadFiltersFromStorage() {
         const hasUrlParams = window.location.search.length > 1;
         if (hasUrlParams) return;
@@ -325,6 +422,15 @@
     document.addEventListener('DOMContentLoaded', function() {
         initializeFavorites();
         loadFiltersFromStorage();
+
+        const carousel = document.getElementById('exhibition-carousel');
+        if (carousel) {
+            updateCarouselArrows();
+
+            carousel.addEventListener('scroll', updateCarouselArrows);
+
+            window.addEventListener('resize', updateCarouselArrows);
+        }
     });
 
     window.addEventListener('pageshow', function(event) {

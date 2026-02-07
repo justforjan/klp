@@ -7,6 +7,7 @@ from app.core.database import engine
 from app.models.event import Event, EventOccurrence
 from app.models.location import Location
 from app.models.bike_tour import BikeTour
+from app.models.exhibition import Exhibition
 import re
 from typing import Optional
 from pathlib import Path
@@ -316,9 +317,79 @@ async def scrape_all_location_details(client: httpx.AsyncClient):
                                 print(f"Downloaded image for {location.name}")
                             else:
                                 print(f"Failed to download image for {location.name}")
+
+                    if 'exhibitions' in details and details['exhibitions']:
+                        await scrape_and_save_exhibitions(client, location, details['exhibitions'], session)
+
             except Exception as e:
                 print(f"Error scraping location details for {location.name}: {e}")
                 session.rollback()
+
+
+async def scrape_and_save_exhibitions(client: httpx.AsyncClient, location: Location, exhibitions_data: list[dict], session: Session):
+    exhibitions_dir = Path("static/exhibitions")
+    exhibitions_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"  Found {len(exhibitions_data)} exhibitions for {location.name}")
+
+    for exhibition_data in exhibitions_data:
+        try:
+            existing_exhibition = session.exec(
+                select(Exhibition)
+                .where(Exhibition.location_id == location.id)
+                .where(Exhibition.name == exhibition_data['name'])
+                .where(Exhibition.artist == exhibition_data['artist'])
+            ).first()
+
+            if existing_exhibition:
+                print(f"  Exhibition '{exhibition_data['name']}' by {exhibition_data['artist']} already exists, skipping")
+                continue
+
+            exhibition = Exhibition(
+                name=exhibition_data['name'],
+                description=exhibition_data.get('description'),
+                artist=exhibition_data['artist'],
+                artist_page_url=exhibition_data.get('artist_page_url'),
+                location_id=location.id
+            )
+
+            if 'image_url' in exhibition_data:
+                image_url = exhibition_data['image_url']
+                if not image_url.startswith('http'):
+                    image_url = f"{BASE_URL}{image_url}"
+
+                image_url_path = image_url.split('?')[0]
+                image_ext = Path(image_url_path).suffix or '.jpg'
+
+                safe_artist_name = re.sub(r'[^\w\s-]', '', exhibition_data['artist']).strip().replace(' ', '_')
+                safe_exhibition_name = re.sub(r'[^\w\s-]', '', exhibition_data['name']).strip().replace(' ', '_')
+                image_filename = f"{location.id}_{safe_artist_name}_{safe_exhibition_name}{image_ext}"
+                image_filepath = exhibitions_dir / image_filename
+
+                if image_filepath.exists():
+                    print(f"  Exhibition image already exists at {image_filepath}, skipping download")
+                    exhibition.image_path = f"/static/exhibitions/{image_filename}"
+                else:
+                    print(f"  Downloading image for exhibition '{exhibition_data['name']}'...")
+                    try:
+                        response = await client.get(image_url, timeout=10.0)
+                        response.raise_for_status()
+
+                        with open(image_filepath, 'wb') as f:
+                            f.write(response.content)
+
+                        exhibition.image_path = f"/static/exhibitions/{image_filename}"
+                        print(f"  Downloaded exhibition image")
+                    except Exception as e:
+                        print(f"  Error downloading exhibition image: {e}")
+
+            session.add(exhibition)
+            session.commit()
+            print(f"  Saved exhibition '{exhibition_data['name']}' by {exhibition_data['artist']}")
+
+        except Exception as e:
+            print(f"  Error saving exhibition: {e}")
+            session.rollback()
 
 
 async def download_location_image(client: httpx.AsyncClient, image_url: str, location_slug: str) -> Optional[str]:
@@ -422,4 +493,58 @@ async def scrape_location_details(client: httpx.AsyncClient, location: Location)
     if links:
         data['links'] = links
 
+    exhibitions = scrape_exhibitions(soup)
+    if exhibitions:
+        data['exhibitions'] = exhibitions
+
     return data
+
+
+def scrape_exhibitions(soup: BeautifulSoup) -> list[dict]:
+    exhibitions = []
+
+    slider_div = soup.find('div', class_=lambda x: x and 'slider' in x and 'aus' in x)
+    if not slider_div:
+        return exhibitions
+
+    exhibition_items = slider_div.find_all('div', class_='item')
+
+    for item in exhibition_items:
+        try:
+            exhibition_data = {}
+
+            artist_p = item.find('p')
+            if artist_p:
+                artist_text = artist_p.get_text(strip=True)
+                exhibition_data['artist'] = artist_text
+
+                artist_link = artist_p.find('a', class_='star')
+                if artist_link and artist_link.get('href'):
+                    exhibition_data['artist_page_url'] = artist_link.get('href')
+
+            details_p = item.find_all('p')
+            if len(details_p) > 1:
+                details_html = str(details_p[1])
+
+                b_tag = details_p[1].find('b')
+                if b_tag:
+                    exhibition_data['name'] = b_tag.get_text(strip=True)
+
+                em_tag = details_p[1].find('em')
+                if em_tag:
+                    exhibition_data['description'] = em_tag.get_text(strip=True)
+
+            img_div = item.find('div', class_='img')
+            if img_div:
+                img_link = img_div.find('a')
+                if img_link and img_link.get('href'):
+                    exhibition_data['image_url'] = img_link.get('href')
+
+            if 'name' in exhibition_data and 'artist' in exhibition_data:
+                exhibitions.append(exhibition_data)
+
+        except Exception as e:
+            print(f"Error parsing exhibition: {e}")
+            continue
+
+    return exhibitions

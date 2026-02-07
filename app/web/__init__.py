@@ -9,6 +9,7 @@ from datetime import datetime
 from app.core.database import get_session
 from app.models.event import Event, EventOccurrence
 from app.models.location import Location
+from app.models.exhibition import Exhibition
 from app.core.config import settings
 from app.services.pdf_generator import generate_favorites_pdf
 
@@ -332,6 +333,9 @@ async def location_detail_page(
     query = query.order_by(EventOccurrence.start_datetime.asc())
     results = session.exec(query).all()
 
+    exhibitions_query = select(Exhibition).where(Exhibition.location_id == location_id)
+    exhibitions = session.exec(exhibitions_query).all()
+
     cancellation_phrases = ["fällt aus", "fällt leider aus", "fällt weg"]
 
     events_by_date = {}
@@ -363,6 +367,7 @@ async def location_detail_page(
         {
             "request": request,
             "location": location,
+            "exhibitions": exhibitions,
             "events_by_date": events_by_date,
             "start_date": start_date,
             "end_date": end_date,

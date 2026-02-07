@@ -6,6 +6,7 @@ from sqlalchemy import ARRAY, String
 if TYPE_CHECKING:
     from app.models.bike_tour import BikeTour
     from app.models.event import Event
+    from app.models.exhibition import Exhibition
 
 
 class LocationBikeTour(SQLModel, table=True):
@@ -36,6 +37,7 @@ class Location(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     events: list["Event"] = Relationship(back_populates="location")
+    exhibitions: list["Exhibition"] = Relationship(back_populates="location")
     bike_tours: list["BikeTour"] = Relationship(
         back_populates="locations",
         link_model=LocationBikeTour
