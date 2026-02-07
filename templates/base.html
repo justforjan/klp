@@ -48,6 +48,25 @@
             const menu = document.getElementById('mobile-menu');
             menu.classList.toggle('hidden');
         });
+
+        function addToCalendar(eventName, startDatetime, endDatetime, location, description, organizer) {
+            const formatDate = (dateStr) => {
+                const date = new Date(dateStr);
+                return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            };
+
+            const start = formatDate(startDatetime);
+            const end = endDatetime ? formatDate(endDatetime) : formatDate(new Date(new Date(startDatetime).getTime() + 2 * 60 * 60 * 1000));
+
+            const escapedName = encodeURIComponent(eventName);
+            const escapedLocation = encodeURIComponent(location);
+            const escapedDescription = encodeURIComponent(description || '');
+            const escapedOrganizer = organizer ? encodeURIComponent(`Veranstalter: ${organizer}`) : '';
+
+            const googleCalendarUrl = `https://www.google.com/calendar/render?action=TEMPLATE&text=${escapedName}&dates=${start}/${end}&location=${escapedLocation}&details=${escapedDescription}${escapedOrganizer ? '%0A' + escapedOrganizer : ''}`;
+
+            window.open(googleCalendarUrl, '_blank');
+        }
     </script>
     {% block extra_scripts %}{% endblock %}
 </body>

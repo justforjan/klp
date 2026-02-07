@@ -200,7 +200,16 @@
                                 </div>
                             </div>
 
-                            <div class="flex-shrink-0">
+                            <div class="flex-shrink-0 flex gap-2">
+                                <button
+                                    onclick="addToCalendar('{{ event.name|replace("'", "\\'") }}', '{{ occurrence.start_datetime.isoformat() }}', '{{ occurrence.end_datetime.isoformat() if occurrence.end_datetime else '' }}', '{{ location.name|replace("'", "\\'") }}', '{{ event.description|replace("'", "\\'")|replace("\n", " ") if event.description else '' }}', '{{ event.organizer|replace("'", "\\'") if event.organizer else '' }}')"
+                                    class="p-2 rounded-full hover:bg-gray-100 transition"
+                                    title="Zum Kalender hinzufügen"
+                                >
+                                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </button>
                                 <button
                                     onclick="toggleFavorite({{ occurrence.id }})"
                                     class="favorite-btn p-2 rounded-full hover:bg-gray-100 transition"
