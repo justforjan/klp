@@ -12,14 +12,23 @@ import uvicorn
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from app.core.database import drop_and_create_db
-    drop_and_create_db()
-    print("Database dropped and recreated")
 
     from app.services.scraper import run_initial_import
+    from app.services.geocoding import geocode_locations
+    import asyncio
+
     print("Starting initial data import...")
     try:
-        await run_initial_import()
-        print("Initial data import completed")
+        if settings.reload_data:
+            drop_and_create_db()
+            print("Database dropped and recreated")
+            await run_initial_import()
+            print("Initial data import completed")
+
+        if settings.geocode:
+            asyncio.create_task(geocode_locations())
+            print("Background geocoding task started")
+
     except Exception as e:
         print(f"Error during import: {e}")
         import traceback

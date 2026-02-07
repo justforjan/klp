@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import date
 from fastapi import APIRouter, Request, Depends, Query
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select, or_, and_, func
 from datetime import datetime
@@ -10,6 +10,7 @@ from app.core.database import get_session
 from app.models.event import Event, EventOccurrence
 from app.models.location import Location
 from app.core.config import settings
+from app.services.pdf_generator import generate_favorites_pdf
 
 
 router = APIRouter(tags=["web"])
@@ -384,21 +385,17 @@ async def favourites_page(
     )
 
 
-@router.get("/api/favourites/events")
-async def get_favourite_events(
-    ids: str = Query(...),
-    session: Session = Depends(get_session),
-):
+def get_favourite_events_data(ids: str, session: Session):
     if not ids:
-        return JSONResponse([])
+        return {}
 
     try:
         occurrence_ids = [int(id_str) for id_str in ids.split(',') if id_str.strip()]
     except ValueError:
-        return JSONResponse([])
+        return {}
 
     if not occurrence_ids:
-        return JSONResponse([])
+        return {}
 
     query = (
         select(EventOccurrence, Event, Location)
@@ -449,10 +446,43 @@ async def get_favourite_events(
                 "id": location.id,
                 "name": location.name,
                 "subtitle": location.subtitle,
+                "address": location.address,
+                "phone": location.phone,
+                "email": location.email,
             }
         })
 
+    return events_by_date
+
+
+@router.get("/api/favourites/events")
+async def get_favourite_events(
+    ids: str = Query(...),
+    session: Session = Depends(get_session),
+):
+    events_by_date = get_favourite_events_data(ids, session)
     return JSONResponse(events_by_date)
+
+
+@router.get("/api/favourites/pdf")
+async def export_favourites_pdf(
+    ids: str = Query(...),
+    session: Session = Depends(get_session),
+):
+    events_by_date = get_favourite_events_data(ids, session)
+
+    if not events_by_date:
+        return JSONResponse({"error": "No favorites found"}, status_code=404)
+
+    pdf_buffer = generate_favorites_pdf(events_by_date)
+
+    return StreamingResponse(
+        pdf_buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=favoriten_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        }
+    )
 
 
 @router.get("/api/locations/search")
@@ -474,4 +504,56 @@ async def search_locations(
     return JSONResponse([
         {"id": loc.id, "name": loc.name, "subtitle": loc.subtitle}
         for loc in locations
+    ])
+
+
+@router.get("/map", response_class=HTMLResponse)
+async def map_page(
+    request: Request,
+    session: Session = Depends(get_session),
+):
+    query = select(Location).where(
+        (Location.latitude == 0.0) | (Location.longitude == 0.0)
+    ).order_by(Location.name.asc())
+    locations_without_coords = session.exec(query).all()
+
+    return templates.TemplateResponse(
+        "map.html",
+        {
+            "request": request,
+            "locations_without_coords": locations_without_coords,
+        },
+    )
+
+
+@router.get("/api/locations/map")
+async def get_map_locations(
+    session: Session = Depends(get_session),
+):
+    query = (
+        select(Location, func.count(Event.id).label("event_count"))
+        .outerjoin(Event, Location.id == Event.location_id)
+        .where(
+            and_(
+                Location.latitude != 0.0,
+                Location.longitude != 0.0
+            )
+        )
+        .group_by(Location.id)
+        .order_by(Location.name.asc())
+    )
+
+    results = session.exec(query).all()
+
+    return JSONResponse([
+        {
+            "id": location.id,
+            "name": location.name,
+            "subtitle": location.subtitle,
+            "address": location.address,
+            "latitude": location.latitude,
+            "longitude": location.longitude,
+            "event_count": event_count,
+        }
+        for location, event_count in results
     ])
