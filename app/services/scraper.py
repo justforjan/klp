@@ -214,7 +214,6 @@ def batch_insert_events(events_data: list[dict]):
                 original_page_url = f"{BASE_URL}/orte/{location_slug}.html" if location_slug else None
                 location = Location(
                     name=location_name,
-                    address=f"Location address for {location_slug}",
                     latitude=0.0,
                     longitude=0.0,
                     original_page_url=original_page_url,
@@ -290,7 +289,7 @@ async def scrape_all_location_details(client: httpx.AsyncClient):
                     session.add(location)
                     session.commit()
 
-                    if 'image_url' in details and not location.image_path:
+                    if 'image_url' in details and (not location.image_path or not Path(location.image_path).exists()):
                         location_slug = location.original_page_url.split('/')[-1].replace('.html', '') if location.original_page_url else f"location_{location.id}"
                         print(f"Downloading image for {location.name}...")
                         image_path = await download_location_image(client, details['image_url'], location_slug)

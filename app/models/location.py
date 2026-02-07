@@ -23,7 +23,7 @@ class Location(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True)
     subtitle: Optional[str] = Field(default=None)
-    address: str
+    address: Optional[str] = Field(default=None)
     phone: Optional[str] = Field(default=None)
     email: Optional[str] = Field(default=None)
     latitude: float
