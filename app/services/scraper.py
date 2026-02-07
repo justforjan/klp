@@ -6,7 +6,6 @@ from sqlmodel import Session, select
 from app.core.database import engine
 from app.models.event import Event, EventOccurrence
 from app.models.location import Location
-from app.models.bike_tour import BikeTour
 from app.models.exhibition import Exhibition
 import re
 from typing import Optional
@@ -289,6 +288,8 @@ async def scrape_all_location_details(client: httpx.AsyncClient):
                         location.email = details['email']
                     if 'links' in details:
                         location.links = details['links']
+                    if 'bike_tour' in details:
+                        location.bike_tour = int(details['bike_tour'])
 
                     session.add(location)
                     session.commit()
@@ -492,6 +493,13 @@ async def scrape_location_details(client: httpx.AsyncClient, location: Location)
         data['email'] = email
     if links:
         data['links'] = links
+
+    bike_div = comblock.find('div', class_='bike')
+    if bike_div:
+        num_span = bike_div.find('span', class_='num')
+        if num_span:
+            bike_tour_number = num_span.get_text(strip=True)
+            data['bike_tour'] = bike_tour_number
 
     exhibitions = scrape_exhibitions(soup)
     if exhibitions:

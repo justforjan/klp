@@ -5,7 +5,7 @@ engine = create_engine(settings.database_url, echo=False)
 
 
 def drop_and_create_db():
-    from app.models import Event, EventOccurrence, Location, BikeTour, LocationBikeTour
+    from app.models import Event, EventOccurrence, Location
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
 

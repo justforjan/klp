@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     database_url: str = "postgresql://user:password@localhost:5432/klp"
     debug: bool = True
-    reload_data: bool = True
+    reload_data: bool = False
     geocode: bool = False
     scrape_schedule: str = "0 6,18 * * *"
     start_date: str = "2025-05-29"
