@@ -154,7 +154,7 @@
                     const cancelledDescClass = occurrence.is_cancelled ? 'text-gray-500 line-through' : 'text-gray-600';
 
                     const escapedEventName = event.name.replace(/'/g, "\\'");
-                    const escapedLocationName = location.name.replace(/'/g, "\\'");
+                    const escapedLocationAddress = location.address.replace(/'/g, "\\'");
                     const escapedDescription = event.description ? event.description.replace(/'/g, "\\'").replace(/\n/g, " ") : '';
                     const escapedOrganizer = event.organizer ? event.organizer.replace(/'/g, "\\'") : '';
 
@@ -228,7 +228,7 @@
                                 </div>
                                 <div class="flex-shrink-0 flex gap-2">
                                     <button
-                                        onclick="addToCalendar('${escapedEventName}', '${occurrence.start_datetime}', '${occurrence.end_datetime || ''}', '${escapedLocationName}', '${escapedDescription}', '${escapedOrganizer}')"
+                                        onclick="addToCalendar('${escapedEventName}', '${occurrence.start_datetime}', '${occurrence.end_datetime || ''}', '${escapedLocationAddress}', '${escapedDescription}', '${escapedOrganizer}')"
                                         class="p-2 rounded-full hover:bg-gray-100 transition"
                                         title="Zum Kalender hinzufügen"
                                     >
