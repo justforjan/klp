@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Favoriten - Kulturelle Landpartie{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Meine Favoriten</h1>
+
+    <div id="favourites-content">
+        <div class="text-center py-12">
+            <svg class="animate-spin h-12 w-12 mx-auto text-blue-600 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p class="text-gray-600">Lade Favoriten...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    async function loadFavourites() {
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        const contentDiv = document.getElementById('favourites-content');
+
+        if (favorites.length === 0) {
+            contentDiv.innerHTML = `
+                <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                    <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Keine Favoriten</h3>
+                    <p class="text-gray-600">Sie haben noch keine Veranstaltungen als Favoriten markiert.</p>
+                    <a href="/events" class="inline-block mt-4 text-blue-600 hover:text-blue-800 hover:underline">Zur Terminübersicht →</a>
+                </div>
+            `;
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/favourites/events?ids=${favorites.join(',')}`);
+            const eventsByDate = await response.json();
+
+            if (Object.keys(eventsByDate).length === 0) {
+                contentDiv.innerHTML = `
+                    <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                        <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Keine Favoriten gefunden</h3>
+                        <p class="text-gray-600">Die favorisierten Veranstaltungen konnten nicht gefunden werden.</p>
+                        <a href="/events" class="inline-block mt-4 text-blue-600 hover:text-blue-800 hover:underline">Zur Terminübersicht →</a>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="bg-white rounded-lg shadow-md p-6"><div class="space-y-6">';
+
+            const sortedDates = Object.keys(eventsByDate).sort();
+            for (const dateStr of sortedDates) {
+                const date = new Date(dateStr + 'T00:00:00');
+                const formattedDate = date.toLocaleDateString('de-DE', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+
+                html += `
+                    <div class="border-l-4 border-blue-500 pl-4">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">${formattedDate}</h3>
+                        <div class="space-y-3">
+                `;
+
+                const dayEvents = eventsByDate[dateStr];
+                for (const item of dayEvents) {
+                    const occurrence = item.occurrence;
+                    const event = item.event;
+                    const location = item.location;
+
+                    const startTime = new Date(occurrence.start_datetime).toLocaleTimeString('de-DE', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    const cancelledClass = occurrence.is_cancelled ? 'bg-gray-100' : '';
+                    const cancelledTextClass = occurrence.is_cancelled ? 'line-through text-gray-500' : 'text-gray-900';
+                    const cancelledDescClass = occurrence.is_cancelled ? 'text-gray-500 line-through' : 'text-gray-600';
+
+                    html += `
+                        <div class="bg-gray-50 rounded-lg p-4 ${cancelledClass}">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex items-start gap-3 flex-1">
+                                    <div class="flex-shrink-0 bg-blue-100 text-blue-800 px-3 py-1 rounded text-center min-w-[60px]">
+                                        <div class="text-sm font-bold">${startTime}</div>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold mb-1 ${cancelledTextClass}">${event.name}</h4>
+                    `;
+
+                    if (occurrence.is_cancelled) {
+                        html += `
+                            <span class="inline-block bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded mb-2">
+                                Fällt leider aus
+                            </span>
+                        `;
+                    }
+
+                    if (event.description) {
+                        html += `<p class="text-sm mb-2 ${cancelledDescClass}">${event.description}</p>`;
+                    }
+
+                    html += '<div class="flex flex-wrap gap-2">';
+
+                    if (event.payment_type === 'free') {
+                        html += '<span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded">Eintritt frei</span>';
+                    } else if (event.payment_type === 'hat_collection') {
+                        html += '<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">Hutkasse</span>';
+                    } else if (event.payment_type === 'fixed_price' && event.entry_price) {
+                        html += `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">${event.entry_price} €</span>`;
+                    } else if (event.payment_type === 'hat_plus_materials') {
+                        let text = 'Hutkasse';
+                        if (event.material_cost) text += ` + ${event.material_cost} € Material`;
+                        html += `<span class="bg-yellow-100 text-yellow-800 text-xs font-medium px-2.5 py-0.5 rounded">${text}</span>`;
+                    }
+
+                    if (event.booking_required) {
+                        html += '<span class="bg-purple-100 text-purple-800 text-xs font-medium px-2.5 py-0.5 rounded">Anmeldung erforderlich</span>';
+                    }
+
+                    html += '</div>';
+
+                    const locationTextClass = occurrence.is_cancelled ? 'text-gray-500' : 'text-gray-700';
+                    const locationLinkClass = occurrence.is_cancelled ? 'text-gray-500 hover:text-gray-600' : 'text-blue-600 hover:text-blue-800';
+                    const locationStrikeClass = occurrence.is_cancelled ? 'line-through' : '';
+                    const locationSubtitleClass = occurrence.is_cancelled ? 'text-gray-400 line-through' : 'text-gray-500';
+
+                    html += `
+                        <div class="text-sm ${locationTextClass} mt-2">
+                            <span class="font-medium">Ort:</span>
+                            <a href="/locations/${location.id}" class="${locationLinkClass} hover:underline ${locationStrikeClass}">${location.name}</a>
+                    `;
+
+                    html += '</div>';
+
+                    if (event.organizer) {
+                        const organizerClass = occurrence.is_cancelled ? 'text-gray-500 line-through' : 'text-gray-600';
+                        html += `
+                            <p class="text-xs ${organizerClass} mt-1">
+                                <span class="font-medium">Veranstalter:</span> ${event.organizer}
+                            </p>
+                        `;
+                    }
+
+                    html += `
+                                    </div>
+                                </div>
+                                <div class="flex-shrink-0">
+                                    <button
+                                        onclick="toggleFavorite(${occurrence.id})"
+                                        class="favorite-btn p-2 rounded-full hover:bg-gray-100 transition"
+                                        data-event-id="${occurrence.id}"
+                                    >
+                                        <svg class="w-6 h-6 text-red-500 favorite-icon" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                html += '</div></div>';
+            }
+
+            html += '</div></div>';
+            contentDiv.innerHTML = html;
+
+        } catch (error) {
+            console.error('Error loading favourites:', error);
+            contentDiv.innerHTML = `
+                <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                    <svg class="mx-auto h-12 w-12 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Fehler beim Laden</h3>
+                    <p class="text-gray-600">Die Favoriten konnten nicht geladen werden.</p>
+                </div>
+            `;
+        }
+    }
+
+    function toggleFavorite(eventId) {
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        const index = favorites.indexOf(eventId);
+
+        if (index > -1) {
+            favorites.splice(index, 1);
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            loadFavourites();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadFavourites);
+
+    window.addEventListener('pageshow', function(event) {
+        if (event.persisted) {
+            loadFavourites();
+        }
+    });
+</script>
+{% endblock %}

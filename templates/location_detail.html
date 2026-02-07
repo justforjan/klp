@@ -31,8 +31,8 @@
                 </svg>
                 <div>
                     <p class="text-gray-700">{{ location.address }}</p>
-                    {% if location.google_maps_link %}
-                    <a href="{{ location.google_maps_link }}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                    {% if location.address %}
+                    <a href="https://www.google.com/maps/search/ {{ location.address }}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
                         In Google Maps öffnen →
                     </a>
                     {% endif %}

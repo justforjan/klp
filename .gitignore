@@ -1,3 +1,9 @@
+# Images
+*.jpg
+*.jpeg
+*.png
+*.gif
+
 # Python
 __pycache__/
 *.py[cod]
