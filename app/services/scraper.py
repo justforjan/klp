@@ -264,6 +264,9 @@ def batch_insert_events(events_data: list[dict]):
 
 
 async def scrape_all_location_details(client: httpx.AsyncClient):
+    static_dir = Path("static/locations")
+    static_dir.mkdir(parents=True, exist_ok=True)
+
     with Session(engine) as session:
         locations = session.exec(select(Location)).all()
 
@@ -289,17 +292,30 @@ async def scrape_all_location_details(client: httpx.AsyncClient):
                     session.add(location)
                     session.commit()
 
-                    if 'image_url' in details and (not location.image_path or not Path(location.image_path).exists()):
+                    if 'image_url' in details:
                         location_slug = location.original_page_url.split('/')[-1].replace('.html', '') if location.original_page_url else f"location_{location.id}"
-                        print(f"Downloading image for {location.name}...")
-                        image_path = await download_location_image(client, details['image_url'], location_slug)
-                        if image_path:
-                            location.image_path = image_path
-                            session.add(location)
-                            session.commit()
-                            print(f"Downloaded image for {location.name}")
+
+                        image_url_path = details['image_url'].split('?')[0]
+                        image_ext = Path(image_url_path).suffix or '.jpg'
+                        expected_filename = f"{location_slug}{image_ext}"
+                        expected_filepath = static_dir / expected_filename
+
+                        if expected_filepath.exists():
+                            print(f"Image already exists for {location.name} at {expected_filepath}, skipping download")
+                            if not location.image_path:
+                                location.image_path = f"/static/locations/{expected_filename}"
+                                session.add(location)
+                                session.commit()
                         else:
-                            print(f"Failed to download image for {location.name}")
+                            print(f"Downloading image for {location.name}...")
+                            image_path = await download_location_image(client, details['image_url'], location_slug)
+                            if image_path:
+                                location.image_path = image_path
+                                session.add(location)
+                                session.commit()
+                                print(f"Downloaded image for {location.name}")
+                            else:
+                                print(f"Failed to download image for {location.name}")
             except Exception as e:
                 print(f"Error scraping location details for {location.name}: {e}")
                 session.rollback()
