@@ -8,7 +8,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib import colors
 
 
-def generate_favorites_pdf(events_data: dict) -> BytesIO:
+def generate_favorites_pdf(events_data: dict, exhibitions_data: dict = None) -> BytesIO:
     buffer = BytesIO()
 
     doc = SimpleDocTemplate(
@@ -63,11 +63,39 @@ def generate_favorites_pdf(events_data: dict) -> BytesIO:
     story.append(Paragraph(f"Exportiert am: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}", normal_style))
     story.append(Spacer(1, 15))
 
-    if not events_data or len(events_data) == 0:
-        story.append(Paragraph("Keine Favoriten vorhanden.", normal_style))
-    else:
-        sorted_dates = sorted(events_data.keys())
+    has_content = False
 
+    if exhibitions_data and len(exhibitions_data) > 0:
+        has_content = True
+        story.append(Paragraph("Favorisierte Ausstellungen", heading_style))
+        story.append(Spacer(1, 6))
+
+        for location_data in exhibitions_data.values():
+            location = location_data['location']
+            exhibitions = location_data['exhibitions']
+
+            story.append(Paragraph(f"<b>{location['name']}</b>", event_title_style))
+            if location.get('subtitle'):
+                story.append(Paragraph(location['subtitle'], normal_style))
+            story.append(Spacer(1, 4))
+
+            for exhibition in exhibitions:
+                story.append(Paragraph(f"• <b>{exhibition['name']}</b>", normal_style))
+                story.append(Paragraph(f"  von {exhibition['artist']}", normal_style))
+                if exhibition.get('description'):
+                    story.append(Paragraph(f"  <i>{exhibition['description']}</i>", normal_style))
+                story.append(Spacer(1, 6))
+
+            story.append(Spacer(1, 12))
+
+    if events_data and len(events_data) > 0:
+        has_content = True
+        if exhibitions_data and len(exhibitions_data) > 0:
+            story.append(Spacer(1, 12))
+            story.append(Paragraph("Favorisierte Termine", heading_style))
+            story.append(Spacer(1, 6))
+
+        sorted_dates = sorted(events_data.keys())
         for date_str in sorted_dates:
             date_obj = datetime.fromisoformat(date_str + 'T00:00:00')
             formatted_date = date_obj.strftime('%A, %d. %B %Y')
@@ -136,6 +164,9 @@ def generate_favorites_pdf(events_data: dict) -> BytesIO:
                 story.append(Spacer(1, 12))
 
             story.append(Spacer(1, 6))
+
+    if not has_content:
+        story.append(Paragraph("Keine Favoriten vorhanden.", normal_style))
 
     doc.build(story)
 

@@ -471,15 +471,54 @@ async def get_favourite_events(
 
 @router.get("/api/favourites/pdf")
 async def export_favourites_pdf(
-    ids: str = Query(...),
+    ids: str = Query(default=""),
+    exhibition_ids: str = Query(default=""),
     session: Session = Depends(get_session),
 ):
-    events_by_date = get_favourite_events_data(ids, session)
+    events_by_date = {}
+    exhibitions_by_location = {}
 
-    if not events_by_date:
+    if ids:
+        events_by_date = get_favourite_events_data(ids, session)
+
+    if exhibition_ids:
+        try:
+            exhibition_id_list = [int(id_str) for id_str in exhibition_ids.split(',') if id_str.strip()]
+            if exhibition_id_list:
+                query = (
+                    select(Exhibition, Location)
+                    .join(Location, Exhibition.location_id == Location.id)
+                    .where(Exhibition.id.in_(exhibition_id_list))
+                    .order_by(Location.name.asc(), Exhibition.name.asc())
+                )
+                results = session.exec(query).all()
+
+                for exhibition, location in results:
+                    location_key = f"{location.id}"
+                    if location_key not in exhibitions_by_location:
+                        exhibitions_by_location[location_key] = {
+                            "location": {
+                                "id": location.id,
+                                "name": location.name,
+                                "subtitle": location.subtitle,
+                            },
+                            "exhibitions": []
+                        }
+
+                    exhibitions_by_location[location_key]["exhibitions"].append({
+                        "id": exhibition.id,
+                        "name": exhibition.name,
+                        "description": exhibition.description,
+                        "artist": exhibition.artist,
+                        "artist_page_url": exhibition.artist_page_url,
+                    })
+        except ValueError:
+            pass
+
+    if not events_by_date and not exhibitions_by_location:
         return JSONResponse({"error": "No favorites found"}, status_code=404)
 
-    pdf_buffer = generate_favorites_pdf(events_by_date)
+    pdf_buffer = generate_favorites_pdf(events_by_date, exhibitions_by_location)
 
     return StreamingResponse(
         pdf_buffer,
@@ -510,6 +549,55 @@ async def search_locations(
         {"id": loc.id, "name": loc.name, "subtitle": loc.subtitle}
         for loc in locations
     ])
+
+
+@router.get("/api/favourites/exhibitions")
+async def get_favourite_exhibitions(
+    ids: str = Query(...),
+    session: Session = Depends(get_session),
+):
+    if not ids:
+        return JSONResponse({})
+
+    try:
+        exhibition_ids = [int(id_str) for id_str in ids.split(',') if id_str.strip()]
+    except ValueError:
+        return JSONResponse({})
+
+    if not exhibition_ids:
+        return JSONResponse({})
+
+    query = (
+        select(Exhibition, Location)
+        .join(Location, Exhibition.location_id == Location.id)
+        .where(Exhibition.id.in_(exhibition_ids))
+        .order_by(Location.name.asc(), Exhibition.name.asc())
+    )
+    results = session.exec(query).all()
+
+    exhibitions_by_location = {}
+    for exhibition, location in results:
+        location_key = f"{location.id}"
+        if location_key not in exhibitions_by_location:
+            exhibitions_by_location[location_key] = {
+                "location": {
+                    "id": location.id,
+                    "name": location.name,
+                    "subtitle": location.subtitle,
+                },
+                "exhibitions": []
+            }
+
+        exhibitions_by_location[location_key]["exhibitions"].append({
+            "id": exhibition.id,
+            "name": exhibition.name,
+            "description": exhibition.description,
+            "artist": exhibition.artist,
+            "artist_page_url": exhibition.artist_page_url,
+            "image_path": exhibition.image_path,
+        })
+
+    return JSONResponse(exhibitions_by_location)
 
 
 @router.get("/map", response_class=HTMLResponse)
