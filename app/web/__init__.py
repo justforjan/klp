@@ -12,6 +12,7 @@ from app.models.location import Location
 from app.models.exhibition import Exhibition
 from app.core.config import settings
 from app.services.pdf_generator import generate_favorites_pdf
+from app.services.embedding import get_embedding
 
 
 router = APIRouter(tags=["web"])
@@ -166,9 +167,11 @@ def get_event_occurrences(
         filters.append(EventOccurrence.start_datetime <= end_datetime)
 
     if search and search.strip():
+        search_embedding = get_embedding(search).tolist()
         search_filter = or_(
-            Event.name.ilike(f"%{search}%"),
-            Event.description.ilike(f"%{search}%")
+            Event.embedding.cosine_distance(search_embedding) < 0.35,
+            # Event.name.ilike(f"%{search}%"),
+            # Event.description.ilike(f"%{search}%")
         )
         filters.append(search_filter)
 

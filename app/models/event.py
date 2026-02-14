@@ -1,7 +1,8 @@
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime
 from decimal import Decimal
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field, Relationship, Column
+from pgvector.sqlalchemy import Vector
 
 if TYPE_CHECKING:
     from app.models.location import Location
@@ -33,6 +34,7 @@ class Event(SQLModel, table=True):
     )
     booking_required: bool = Field(default=False)
     organizer: Optional[str] = Field(default=None)
+    embedding: Optional[list] = Field(default=None, sa_column=Column(Vector(768)))
 
     location: "Location" = Relationship(back_populates="events")
     occurrences: list["EventOccurrence"] = Relationship(back_populates="event")

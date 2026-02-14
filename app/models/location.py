@@ -24,8 +24,6 @@ class Location(SQLModel, table=True):
     image_path: Optional[str] = Field(default=None)
     links: Optional[list[str]] = Field(default=None, sa_column=Column(ARRAY(String)))
     bike_tour: Optional[int] = Field(default=None)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
     events: list["Event"] = Relationship(back_populates="location")
     exhibitions: list["Exhibition"] = Relationship(back_populates="location")

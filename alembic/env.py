@@ -7,7 +7,7 @@ from alembic import context
 from sqlmodel import SQLModel
 
 from app.core.config import settings
-from app.models import Event, EventOccurrence, Location, BikeTour, LocationBikeTour
+from app.models import Event, EventOccurrence, Location
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

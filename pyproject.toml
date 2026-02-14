@@ -17,6 +17,7 @@ dependencies = [
     "beautifulsoup4>=4.12.3",
     "apscheduler>=3.10.4",
     "reportlab>=4.4.9",
+    "pgvector>=0.4.2",
 ]
 
 [tool.uv]
