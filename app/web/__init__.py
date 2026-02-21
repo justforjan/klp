@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 from datetime import date
 from fastapi import APIRouter, Request, Depends, Query
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -12,7 +12,7 @@ from app.models.location import Location
 from app.models.exhibition import Exhibition
 from app.core.config import settings
 from app.services.pdf_generator import generate_favorites_pdf
-from app.services.embedding import get_embedding
+# from app.services.embedding import get_embedding
 
 
 router = APIRouter(tags=["web"])
@@ -146,7 +146,7 @@ def get_event_occurrences(
     search: Optional[str] = None,
     page: int = 1,
     page_size: int = 20,
-    show_cancelled: Optional[str] = None,
+    show_cancelled: Optional[Literal["", "only", "hide"]] = None,
     payment_types: Optional[list[str]] = None,
     location_id: Optional[int] = None,
 ):
@@ -167,11 +167,11 @@ def get_event_occurrences(
         filters.append(EventOccurrence.start_datetime <= end_datetime)
 
     if search and search.strip():
-        search_embedding = get_embedding(search).tolist()
+        # search_embedding = get_embedding(search).tolist()
         search_filter = or_(
-            Event.embedding.cosine_distance(search_embedding) < 0.35,
-            # Event.name.ilike(f"%{search}%"),
-            # Event.description.ilike(f"%{search}%")
+            # Event.embedding.cosine_distance(search_embedding) < 0.35,
+            Event.name.ilike(f"%{search}%"),
+            Event.description.ilike(f"%{search}%")
         )
         filters.append(search_filter)
 
@@ -180,6 +180,12 @@ def get_event_occurrences(
 
     if location_id:
         filters.append(Event.location_id == location_id)
+
+    if show_cancelled == "only":
+        filters.append(EventOccurrence.is_cancelled is True)
+
+    if show_cancelled == "hide":
+        filters.append(EventOccurrence.is_cancelled is False)
 
     if filters:
         base_query = base_query.where(and_(*filters))
@@ -202,30 +208,9 @@ def get_event_occurrences(
     results = session.exec(data_query).all()
 
     occurrences = []
-    cancellation_phrases = ["fällt aus", "fällt leider aus", "fällt weg"]
     event_ids = set()
 
     for occurrence, event, location in results:
-        is_cancelled = False
-
-        if event.name:
-            name_lower = event.name.lower()
-            if any(phrase in name_lower for phrase in cancellation_phrases):
-                is_cancelled = True
-
-        if not is_cancelled and event.description:
-            description_lower = event.description.lower()
-            if any(phrase in description_lower for phrase in cancellation_phrases):
-                is_cancelled = True
-
-        if is_cancelled:
-            occurrence.is_cancelled = True
-
-        if show_cancelled == "only" and not is_cancelled:
-            continue
-        elif show_cancelled == "hide" and is_cancelled:
-            continue
-
         occurrences.append({
             "occurrence": occurrence,
             "event": event,

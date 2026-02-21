@@ -2,6 +2,7 @@ import httpx
 from bs4 import BeautifulSoup
 from datetime import datetime, date, timedelta
 from decimal import Decimal
+
 from sqlmodel import Session, select
 from app.core.database import engine
 from app.models.event import Event, EventOccurrence
@@ -24,7 +25,9 @@ async def run_initial_import():
     all_events_data = []
 
     async with httpx.AsyncClient() as client:
-        dates = generate_event_dates()
+        start_date = date.fromisoformat(settings.start_date)
+        end_date = date.fromisoformat(settings.end_date)
+        dates = generate_event_dates(start_date, end_date)
 
         for date_str in dates:
             print(f"Scraping events for {date_str}...")
@@ -43,11 +46,12 @@ async def run_initial_import():
     print("Data import completed")
 
 
-def generate_event_dates() -> list[str]:
-    dates = []
+def generate_event_dates(start: date, end: date) -> list[str]:
 
-    start = date.fromisoformat(settings.start_date)
-    end = date.fromisoformat(settings.end_date)
+    if start > end:
+        raise ValueError("Start date must be before or equal to end date")
+
+    dates = []
 
     duration = (end - start) + timedelta(days=1)
 
@@ -106,6 +110,10 @@ def parse_event_row(row, date_str: str):
     payment_type, entry_price, material_cost = extract_payment_info(description)
     booking_required = "anmeld" in description.lower() or "buchung" in description.lower()
     organizer = extract_organizer(location_div)
+    cancellation_phrases = ["fällt aus", "fällt leider aus", "fällt weg"]
+    cancelled = any(phrase in description.lower() for phrase in cancellation_phrases)
+    if not cancelled:
+        cancelled = any(phrase in event_name.lower() for phrase in cancellation_phrases)
 
     event_datetime = parse_datetime(date_str, time_str)
 
@@ -120,6 +128,7 @@ def parse_event_row(row, date_str: str):
         'booking_required': booking_required,
         'organizer': organizer,
         'start_datetime': event_datetime,
+        'is_cancelled': cancelled,
     }
 
 
@@ -147,12 +156,11 @@ def extract_location(div) -> tuple[Optional[str], Optional[str]]:
 
 def extract_event_details(div) -> tuple[Optional[str], str]:
     bold = div.find('b')
-    if not bold:
-        return None, ""
+    event_name = "Kein Titel"
+    if bold:
+        event_name = bold.get_text(strip=True)
+        bold.extract()
 
-    event_name = bold.get_text(strip=True)
-
-    bold.extract()
     description = div.get_text(separator=' ', strip=True)
 
     return event_name, description
@@ -254,6 +262,7 @@ def batch_insert_events(events_data: list[dict]):
             occurrence = EventOccurrence(
                 event_id=event.id,
                 start_datetime=event_data['start_datetime'],
+                is_cancelled=event_data['is_cancelled'],
             )
             occurrences.append(occurrence)
 
