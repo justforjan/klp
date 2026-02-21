@@ -6,7 +6,7 @@ import asyncio
 import uvicorn
 
 from app.core.config import settings
-from app.api.events import router as events_router
+from app.api import router as api_router
 from app.web import router as web_router
 
 @asynccontextmanager
@@ -82,13 +82,8 @@ async def log_requests(request: Request, call_next):
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-app.include_router(events_router)
+app.include_router(api_router)
 app.include_router(web_router)
-
-
-@app.get("/")
-async def root():
-    return {"message": "Willkommen zur Kulturelle Landpartie"}
 
 
 @app.get("/health")

@@ -8,8 +8,7 @@ from app.models.location import Location
 from app.schemas.event import EventOccurrenceResponse, EventResponse, LocationResponse
 
 
-router = APIRouter(prefix="/api/events", tags=["events"])
-
+router = APIRouter(prefix="/events", tags=["events"])
 
 @router.get("/occurrences", response_model=list[EventOccurrenceResponse])
 def list_event_occurrences(
