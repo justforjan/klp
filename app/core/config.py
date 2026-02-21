@@ -2,7 +2,14 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    database_url: str = "postgresql://user:password@localhost:5432/klp"
+    # Database configuration
+    database_username: str = "klp_user"
+    database_password: str = "klp_password"
+    database_host: str = "localhost"
+    database_port: int = 5433
+    database_name: str = "klp_db"
+
+    # Application configuration
     debug: bool = True
     reload_data: bool = False
     run_geocode: bool = True

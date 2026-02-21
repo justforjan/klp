@@ -88,7 +88,7 @@ app.include_router(web_router)
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to Kulturelle Landpartie"}
+    return {"message": "Willkommen zur Kulturelle Landpartie"}
 
 
 @app.get("/health")
