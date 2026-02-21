@@ -36,5 +36,5 @@ env/
 Thumbs.db
 
 # uv
-.python-version
+#.python-version
 uv.lock
