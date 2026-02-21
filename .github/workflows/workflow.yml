@@ -13,22 +13,8 @@ jobs:
     name: Lint Check
     runs-on: ubuntu-latest
     steps:
-      - name: Announce
-        run: |
-          echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-          echo "🐧 Running on ${{ runner.os }} hosted by GitHub!"
-          echo "🔎 Branch: ${{ github.ref }} Repository: ${{ github.repository }}"
-
       - name: Check out repository code
         uses: actions/checkout@v5
 
       - name: Lint check (ruff)
         uses: astral-sh/ruff-action@v3
-
-      - name: List files in the repository
-        run: |
-          echo "Files under $GITHUB_WORKSPACE"
-          ls -la ${{ github.workspace }} || true
-
-      - name: Done
-        run: echo "🍏 Lint job finished with status ${{ job.status }}"
