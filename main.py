@@ -1,11 +1,13 @@
-import asyncio
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
+import time
+import asyncio
+import uvicorn
+
 from app.core.config import settings
 from app.api.events import router as events_router
 from app.web import router as web_router
-import uvicorn
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -47,8 +49,6 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-from fastapi import Request
-import time
 
 
 @app.middleware("http")

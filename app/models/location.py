@@ -1,5 +1,4 @@
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
 from sqlmodel import SQLModel, Field, Relationship, Column
 from sqlalchemy import ARRAY, String
 

@@ -3,8 +3,8 @@ from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+from reportlab.lib.enums import TA_CENTER
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib import colors
 
 
@@ -59,7 +59,7 @@ def generate_favorites_pdf(events_data: dict, exhibitions_data: dict = None) -> 
     story = []
 
     story.append(Paragraph("Meine Favoriten", title_style))
-    story.append(Paragraph(f"Kulturelle Landpartie", normal_style))
+    story.append(Paragraph("Kulturelle Landpartie", normal_style))
     story.append(Paragraph(f"Exportiert am: {datetime.now().strftime('%d.%m.%Y um %H:%M Uhr')}", normal_style))
     story.append(Spacer(1, 15))
 

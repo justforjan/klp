@@ -1,6 +1,6 @@
 import httpx
 from bs4 import BeautifulSoup
-from datetime import datetime, time, date, timedelta
+from datetime import datetime, date, timedelta
 from decimal import Decimal
 from sqlmodel import Session, select
 from app.core.database import engine
@@ -380,7 +380,7 @@ async def scrape_and_save_exhibitions(client: httpx.AsyncClient, location: Locat
                             f.write(response.content)
 
                         exhibition.image_path = f"/static/exhibitions/{image_filename}"
-                        print(f"  Downloaded exhibition image")
+                        print("  Downloaded exhibition image")
                     except Exception as e:
                         print(f"  Error downloading exhibition image: {e}")
 
@@ -532,7 +532,6 @@ def scrape_exhibitions(soup: BeautifulSoup) -> list[dict]:
 
             details_p = item.find_all('p')
             if len(details_p) > 1:
-                details_html = str(details_p[1])
 
                 b_tag = details_p[1].find('b')
                 if b_tag:

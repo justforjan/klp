@@ -1,4 +1,4 @@
-from sqlmodel import create_engine, Session, SQLModel
+from sqlmodel import create_engine, Session
 from app.core.config import settings
 from alembic import command
 from alembic.config import Config

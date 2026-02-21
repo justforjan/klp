@@ -20,7 +20,7 @@ def add_embeddings():
 
     with Session(engine) as session:
         events = session.exec(
-            select(Event).where(Event.embedding == None)
+            select(Event).where(Event.embedding is None)
         ).all()
 
     if not events:
