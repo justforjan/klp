@@ -1,33 +1,34 @@
 name: Lint Check
 
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on:
+  push: {}
+  pull_request: {}
+  workflow_dispatch: {}
 
-on: [push]
+permissions:
+  contents: read
 
 jobs:
   lint-check:
-    name: Link Check
+    name: Lint Check
     runs-on: ubuntu-latest
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Announce
+        run: |
+          echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
+          echo "🐧 Running on ${{ runner.os }} hosted by GitHub!"
+          echo "🔎 Branch: ${{ github.ref }} Repository: ${{ github.repository }}"
 
       - name: Check out repository code
         uses: actions/checkout@v5
 
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-
-      - name: lint check
-        run: echo "🔍 Running lint check on the code..."
+      - name: Lint check (ruff)
         uses: astral-sh/ruff-action@v3
 
       - name: List files in the repository
         run: |
-          ls ${{ github.workspace }}
+          echo "Files under $GITHUB_WORKSPACE"
+          ls -la ${{ github.workspace }} || true
 
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+      - name: Done
+        run: echo "🍏 Lint job finished with status ${{ job.status }}"
