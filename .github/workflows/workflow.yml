@@ -1,4 +1,4 @@
-name: Lint Check
+name: Tests
 
 on:
   push: {}
@@ -20,21 +20,18 @@ jobs:
         uses: astral-sh/ruff-action@v3
 
   test:
-    name: Test
+    container: ghcr.io/justforjan/klp_pipeline_tests:latest
+    credentials:
+      username: justforjan
+      password: ${{ secrets.KLP_PIPELINE_TEST_CR_PAT }}
     runs-on: ubuntu-latest
+    name: Test
     needs: lint-check
     steps:
-      - name: Install German locale
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y locales
-          sudo locale-gen de_DE.UTF-8
-          sudo update-locale
-
       - name: Check out repository code
         uses: actions/checkout@v5
 
-      - name: "Set up Python"
+      - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version-file: ".python-version"
