@@ -17,7 +17,12 @@ async def get_favourite_events(
     ids: str = Query(...),
     session: Session = Depends(get_session),
 ):
-    events_by_date = get_favourite_events_data(ids, session)
+    try:
+        occurrence_ids = [int(id_str) for id_str in ids.split(',') if id_str.strip()]
+    except ValueError:
+        return JSONResponse({})
+
+    events_by_date = get_favourite_events_data(occurrence_ids, session)
     return JSONResponse(events_by_date)
 
 
@@ -27,11 +32,14 @@ async def export_favourites_pdf(
     exhibition_ids: str = Query(default=""),
     session: Session = Depends(get_session),
 ):
-    events_by_date = {}
     exhibitions_by_location = {}
 
-    if ids:
-        events_by_date = get_favourite_events_data(ids, session)
+    try:
+        occurrence_ids = [int(id_str) for id_str in ids.split(',') if id_str.strip()]
+    except ValueError:
+        occurrence_ids = []
+
+    events_by_date = get_favourite_events_data(occurrence_ids, session)
 
     if exhibition_ids:
         try:
@@ -81,14 +89,7 @@ async def export_favourites_pdf(
     )
 
 
-def get_favourite_events_data(ids: str, session: Session):
-    if not ids:
-        return {}
-
-    try:
-        occurrence_ids = [int(id_str) for id_str in ids.split(',') if id_str.strip()]
-    except ValueError:
-        return {}
+def get_favourite_events_data(occurrence_ids: list[int], session: Session):
 
     if not occurrence_ids:
         return {}
