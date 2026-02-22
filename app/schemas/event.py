@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import datetime
 from decimal import Decimal
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class LocationResponse(BaseModel):
@@ -30,5 +30,4 @@ class EventOccurrenceResponse(BaseModel):
     event: EventResponse
     location: LocationResponse
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
