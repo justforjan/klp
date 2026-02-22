@@ -2,16 +2,17 @@ from datetime import date
 import pytest
 from bs4 import BeautifulSoup
 
-from app.services.scraper import generate_event_dates, extract_time, extract_location, extract_event_details
+from app.services.scraper import KLPScraper
 
 class TestGenerateEventDates:
     def test_generate_event_dates_should_return_correct_list(self):
         # Given
+        scraper = KLPScraper()
         start = date.fromisoformat("2026-01-01")
         end = date.fromisoformat("2026-01-03")
 
         # When
-        result = generate_event_dates(start, end)
+        result = scraper.generate_event_dates(start, end)
 
         # Then
         expected = [
@@ -23,11 +24,12 @@ class TestGenerateEventDates:
 
     def test_generate_event_dates_should_return_one_item_if_start_equal_end(self):
         # Given
+        scraper = KLPScraper()
         start = date.fromisoformat("2026-01-01")
         end = date.fromisoformat("2026-01-01")
 
         # When
-        result = generate_event_dates(start, end)
+        result = scraper.generate_event_dates(start, end)
 
         # Then
         expected = [
@@ -37,13 +39,14 @@ class TestGenerateEventDates:
 
     def test_generate_event_dates_should_raise_exception_if_start_date_greater_end_date(self):
         # Given
+        scraper = KLPScraper()
         start = date.fromisoformat("2026-01-02")
         end = date.fromisoformat("2026-01-01")
 
         # When
         # Then
         with pytest.raises(ValueError):
-            generate_event_dates(start, end)
+            scraper.generate_event_dates(start, end)
 
         # <div class="row">
         #     <div><b>29.05.</b> — <nobr>09:00</nobr> | <a href="/radrouten.html#t4" target="_radrouten">Fahrradtour:<span class="num">4</span></a></div>
@@ -54,10 +57,11 @@ class TestGenerateEventDates:
 class TestParseEventRow:
     def test_extract_time_should_return_correct_time(self):
         # Given
+        scraper = KLPScraper()
         time_div = BeautifulSoup('<div><b>29.05.</b> — <nobr>09:00</nobr> | <a href="/radrouten.html#t4" target="_radrouten">Fahrradtour:<span class="num">4</span></a></div>', features="html.parser")
 
         # When
-        result = extract_time(time_div)
+        result = scraper.extract_time(time_div)
 
         # Then
         expected = ("09:00")
@@ -65,20 +69,22 @@ class TestParseEventRow:
 
     def test_extract_time_should_return_none_if_no_time(self):
         # Given
+        scraper = KLPScraper()
         time_div = BeautifulSoup('<div><b>29.05.</b> | <a href="/radrouten.html#t4" target="_radrouten">Fahrradtour:<span class="num">4</span></a></div>', features="html.parser")
 
         # When
-        result = extract_time(time_div)
+        result = scraper.extract_time(time_div)
 
         # Then
         assert result is None
 
     def test_extract_location_should_return_correct_location(self):
         # Given
+        scraper = KLPScraper()
         location_div = BeautifulSoup('<div><a href="/orte/middefeitz.html" title="Wunderpunkt anzeigen">MIDDEFEITZ</a> (Meike Klapprodt)</div>', features="html.parser")
 
         # When
-        location_name, location_slug = extract_location(location_div)
+        location_name, location_slug = scraper.extract_location(location_div)
 
         # Then
         expected_location_name = "MIDDEFEITZ"
@@ -88,10 +94,11 @@ class TestParseEventRow:
 
     def test_extract_location_should_return_none_none_if_no_link(self):
         # Given
+        scraper = KLPScraper()
         location_div = BeautifulSoup('<div> (Meike Klapprodt)</div>', features="html.parser")
 
         # When
-        location_name, location_slug = extract_location(location_div)
+        location_name, location_slug = scraper.extract_location(location_div)
 
         # Then
         assert location_slug is None
@@ -99,10 +106,11 @@ class TestParseEventRow:
 
     def test_extract_location_should_return_none_for_slug_if_no_matching_slug(self):
         # Given
+        scraper = KLPScraper()
         location_div = BeautifulSoup('<div><a href="/orte/" title="Wunderpunkt anzeigen">MIDDEFEITZ</a> (Meike Klapprodt)</div>', features="html.parser")
 
         # When
-        location_name, location_slug = extract_location(location_div)
+        location_name, location_slug = scraper.extract_location(location_div)
 
         # Then
         expected_location_name = "MIDDEFEITZ"
@@ -111,10 +119,11 @@ class TestParseEventRow:
 
     def test_extract_location_should_return_correct_event_name_and_description(self):
         # Given
+        scraper = KLPScraper()
         event_description_div = BeautifulSoup('<div><b>Bewegen am Morgen</b><br>Wir starten bewegt in den Tag. <br>Eintritt: Hutkasse</div>', features="html.parser")
 
         # When
-        name, description = extract_event_details(event_description_div)
+        name, description = scraper.extract_event_details(event_description_div)
 
         # Then
         expected_name = "Bewegen am Morgen"
@@ -124,10 +133,11 @@ class TestParseEventRow:
 
     def test_extract_location_should_return_default_title_if_title_is_missing(self):
         # Given
+        scraper = KLPScraper()
         event_description_div = BeautifulSoup('<div><br>Wir starten bewegt in den Tag. <br>Eintritt: Hutkasse</div>', features="html.parser")
 
         # When
-        name, description = extract_event_details(event_description_div)
+        name, description = scraper.extract_event_details(event_description_div)
 
         # Then
         expected_name = "Kein Titel"
