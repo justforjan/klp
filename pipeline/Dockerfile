@@ -16,10 +16,4 @@ RUN apt-get update && \
 ENV LANG=de_DE.UTF-8
 ENV LC_ALL=de_DE.UTF-8
 
-WORKDIR /pipeline
-
-COPY uv.lock ./uv.lock
-COPY pyproject.toml ./pyproject.toml
-RUN uv sync --locked --all-extras
-
 CMD ["sh"]
