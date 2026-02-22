@@ -1,5 +1,5 @@
 from sqlmodel import create_engine, Session
-from app.core.config import settings
+from app.config import settings
 from alembic import command
 from alembic.config import Config
 import os

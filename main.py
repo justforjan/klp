@@ -5,7 +5,7 @@ import time
 import asyncio
 import uvicorn
 
-from app.core.config import settings
+from app.config import settings
 from app.api import router as api_router
 from app.web import router as web_router
 

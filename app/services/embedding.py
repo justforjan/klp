@@ -1,7 +1,7 @@
 from huggingface_hub import InferenceClient
 from numpy import ndarray
 from sqlmodel import Session, select
-from app.core.config import settings
+from app.config import settings
 from app.models.event import Event
 from app.core.database import engine
 

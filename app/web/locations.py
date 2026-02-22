@@ -10,7 +10,7 @@ from app.core.database import get_session
 from app.models.event import Event, EventOccurrence
 from app.models.location import Location
 from app.models.exhibition import Exhibition
-from app.core.config import settings
+from app.config import settings
 
 router = APIRouter(prefix="/locations", tags=["locations"])
 templates = Jinja2Templates(directory="templates")

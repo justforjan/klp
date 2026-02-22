@@ -9,7 +9,7 @@ from datetime import datetime
 from app.core.database import get_session
 from app.models.event import Event, EventOccurrence
 from app.models.location import Location
-from app.core.config import settings
+from app.config import settings
 # from app.services.embedding import get_embedding
 
 router = APIRouter(prefix="/events", tags=["events"])
