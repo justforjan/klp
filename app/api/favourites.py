@@ -102,23 +102,8 @@ def get_favourite_events_data(ids: str, session: Session):
     )
     results = session.exec(query).all()
 
-    cancellation_phrases = ["fällt aus", "fällt leider aus", "fällt weg"]
-
     events_by_date = {}
     for occurrence, event, location in results:
-        is_cancelled = False
-        if event.name:
-            name_lower = event.name.lower()
-            if any(phrase in name_lower for phrase in cancellation_phrases):
-                is_cancelled = True
-        if not is_cancelled and event.description:
-            description_lower = event.description.lower()
-            if any(phrase in description_lower for phrase in cancellation_phrases):
-                is_cancelled = True
-
-        if is_cancelled:
-            occurrence.is_cancelled = True
-
         event_date = occurrence.start_datetime.date().isoformat()
         if event_date not in events_by_date:
             events_by_date[event_date] = []
