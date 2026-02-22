@@ -29,6 +29,11 @@ jobs:
     name: Test
     needs: lint-check
     steps:
+      - name: Verify locale
+        run: |
+          locale
+          python -c "import locale; print('py locale.getdefaultlocale()', locale.getdefaultlocale())"
+
       - name: Check out repository code
         uses: actions/checkout@v5
 
