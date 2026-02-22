@@ -20,10 +20,11 @@ jobs:
         uses: astral-sh/ruff-action@v3
 
   test:
-    container: ghcr.io/justforjan/klp_pipeline_tests:latest
-    credentials:
-      username: justforjan
-      password: ${{ secrets.KLP_PIPELINE_TEST_CR_PAT }}
+    container:
+      image: ghcr.io/justforjan/klp_pipeline_tests:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.KLP_PIPELINE_TEST_CR_PAT }}
     runs-on: ubuntu-latest
     name: Test
     needs: lint-check
