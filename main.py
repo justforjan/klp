@@ -17,9 +17,8 @@ async def lifespan(app: FastAPI):
 
     try:
         if settings.reload_data:
-            from app.services.scraper import KLPScraper
+            from app.services.scraper import scraper
             print("Starting data import...")
-            scraper = KLPScraper()
             await scraper.run_initial_import()
 
         if settings.run_geocode:

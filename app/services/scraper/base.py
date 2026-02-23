@@ -1,7 +1,4 @@
 from abc import ABC, abstractmethod
-from typing import Optional
-import httpx
-from sqlmodel import Session
 
 
 class BaseScraper(ABC):

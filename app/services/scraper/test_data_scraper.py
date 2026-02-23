@@ -1,10 +1,9 @@
-from bisect import bisect_left
 from typing import override
 from sqlmodel import Session
 from datetime import datetime
 
 from app.services.scraper.base import BaseScraper
-from app.models import *
+from app.models import Location, Event, Exhibition, EventOccurrence
 from app.core.database import engine
 
 class TestDataScraper(BaseScraper):
