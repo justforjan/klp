@@ -25,6 +25,6 @@ class AppSettings(BaseSettings):
     year: int = 2025
     data_loader_type: Literal["test", "prod"] = "prod"
 
-    hf_access_token: str
+    hf_access_token: str = "" # TODO: Remove the default value and handle it differnetly depending on the environment (prod, tests, pipeline)
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
