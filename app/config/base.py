@@ -28,3 +28,7 @@ class AppSettings(BaseSettings):
     hf_access_token: str = "" # TODO: Remove the default value and handle it differnetly depending on the environment (prod, tests, pipeline)
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
+
+    @property
+    def database_url(self) -> str:
+        return f"postgresql://{self.database_username}:{self.database_password}@{self.database_host}:{self.database_port}/{self.database_name}"

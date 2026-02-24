@@ -3,32 +3,37 @@ from sqlalchemy import Engine
 from alembic import command
 from alembic.config import Config
 import os
-import sys
+from pathlib import Path
 from contextlib import contextmanager
 
 from app.config import AppSettings
 
-def run_migrations(reset: bool = False):
-    alembic_cfg = Config("alembic.ini")
+def run_migrations(settings: AppSettings):
 
-    if reset:
+    project_root = Path(__file__).resolve().parents[2]
+    alembic_ini_path = project_root / "alembic.ini"
+
+    alembic_cfg = Config(str(alembic_ini_path))
+    alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
+
+    if settings.reload_data:
         assert os.getenv("ENV") != "prod", "Cannot reset DB in production!"
         try:
             command.downgrade(alembic_cfg, "base")
         except Exception as exc:
-            sys.exit(f"Failed to downgrade database during reset: {exc}")
+            raise RuntimeError(f"Failed to downgrade database during reset: {exc}") from exc
 
     try:
         command.upgrade(alembic_cfg, "head")
     except Exception as exc:
-        sys.exit(f"Failed to run alembic migrations: {exc}")
+        raise RuntimeError(f"Failed to run alembic migrations: {exc}") from exc
 
 _engine: Engine | None = None
 
 def init_engine(settings: AppSettings) -> None:
     global _engine
     _engine = create_engine(
-        f"postgresql://{settings.database_username}:{settings.database_password}@{settings.database_host}:{settings.database_port}/{settings.database_name}",
+        settings.database_url,
         echo=False,
         pool_size=10,
         max_overflow=20,
