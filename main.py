@@ -7,17 +7,21 @@ import uvicorn
 
 from app.config import settings
 from app.api import router as api_router
+from app.core.database import get_engine
 from app.web import router as web_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from app.core.database import run_migrations
-
+    from app.core.database import run_migrations, init_engine
+    print("Initializing database engine...")
+    init_engine(settings)
+    print("Initializing database tables...")
     run_migrations(reset=settings.reload_data)
 
     try:
         if settings.reload_data:
-            from app.services.scraper import scraper
+            from app.services.scraper import get_scraper
+            scraper = get_scraper(settings.data_loader_type)
             print("Starting data import...")
             await scraper.run_initial_import()
 
@@ -40,6 +44,7 @@ async def lifespan(app: FastAPI):
     yield
 
     print("Shutting down...")
+    get_engine().dispose()
 
 
 app = FastAPI(

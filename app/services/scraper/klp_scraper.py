@@ -7,7 +7,7 @@ from typing import Optional
 from pathlib import Path
 import re
 
-from app.core.database import engine
+from app.core.database import get_session_ctx
 from app.models.event import Event, EventOccurrence
 from app.models.location import Location
 from app.models.exhibition import Exhibition
@@ -199,7 +199,7 @@ class KLPScraper(BaseScraper):
         )
 
     def batch_insert_events(self, events_data: list[dict]) -> None:
-        with Session(engine) as session:
+        with get_session_ctx() as session:
             location_map = {}
             event_map = {}
 
@@ -264,7 +264,7 @@ class KLPScraper(BaseScraper):
         static_dir = Path("static/locations")
         static_dir.mkdir(parents=True, exist_ok=True)
 
-        with Session(engine) as session:
+        with get_session_ctx() as session:
             locations = session.exec(select(Location)).all()
 
             for location in locations:

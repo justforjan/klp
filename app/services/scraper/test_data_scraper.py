@@ -4,7 +4,7 @@ from datetime import datetime
 
 from app.services.scraper.base import BaseScraper
 from app.models import Location, Event, Exhibition, EventOccurrence
-from app.core.database import engine
+from app.core.database import get_session_ctx
 
 class TestDataScraper(BaseScraper):
 
@@ -46,7 +46,7 @@ class TestDataScraper(BaseScraper):
             name="Test Event 2",
             description="This is another test event.",
             location_id=2,
-            payment_type=""
+            payment_type="hat_collection"
         )
 
         # Exhibitions
@@ -78,7 +78,7 @@ class TestDataScraper(BaseScraper):
             is_cancelled=False
         )
 
-        with Session(engine) as session:
+        with get_session_ctx() as session:
             session.add_all([location1, location2, event1, event2, exhibition1, event_occurrence1, event_occurrence2, event_occurrence3])
             session.commit()
 

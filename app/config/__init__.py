@@ -6,7 +6,7 @@ from app.config.local_docker import LocalDockerSettings
 from app.config.prod import ProdSettings
 from app.config.local_test import LocalTestSettings
 
-__all__ = ["settings"]
+__all__ = ["settings", "AppSettings"]
 
 def _get_settings(env: str) -> AppSettings:
     if env == "local":
