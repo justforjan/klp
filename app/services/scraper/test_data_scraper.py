@@ -1,5 +1,4 @@
 from typing import override
-from sqlmodel import Session
 from datetime import datetime
 
 from app.services.scraper.base import BaseScraper
