@@ -81,3 +81,5 @@ class TestDataScraper(BaseScraper):
             session.add_all([location1, location2, event1, event2, exhibition1, event_occurrence1, event_occurrence2, event_occurrence3])
             session.commit()
 
+        print("Import of test data finished")
+

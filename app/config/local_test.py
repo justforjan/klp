@@ -1,10 +1,12 @@
-from app.config import LocalSettings
+from app.config.local import LocalSettings
+from app.config.register_settings import register_setting
 try:
     from typing import Literal
 except Exception:
     from typing_extensions import Literal  # type: ignore
 
 
+@register_setting("local_test")
 class LocalTestSettings(LocalSettings):
 
     # Application configuration

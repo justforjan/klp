@@ -16,7 +16,7 @@ async def lifespan(app: FastAPI):
     print("Initializing database engine...")
     init_engine(settings)
     print("Initializing database tables...")
-    run_migrations(reset=settings.reload_data)
+    run_migrations(settings=settings)
 
     try:
         if settings.reload_data:

@@ -1,11 +1,12 @@
+from app.config.register_settings import register_setting
+
 try:
     from typing import Literal
 except ImportError:
     from typing_extensions import Literal
-
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
+@register_setting("base")
 class AppSettings(BaseSettings):
     # Database configuration
     database_username: str
@@ -25,7 +26,7 @@ class AppSettings(BaseSettings):
     year: int = 2025
     data_loader_type: Literal["test", "prod"] = "prod"
 
-    hf_access_token: str = "" # TODO: Remove the default value and handle it differnetly depending on the environment (prod, tests, pipeline)
+    hf_access_token: str = "" # TODO: Remove the default value and handle it differenlty depending on the environment (prod, tests, pipeline)
 
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
 
