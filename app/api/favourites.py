@@ -89,7 +89,7 @@ async def export_favourites_pdf(
     )
 
 
-def get_favourite_events_data(occurrence_ids: list[int], session: Session):
+def get_favourite_events_data(occurrence_ids: list[int], session: Session) -> dict[str, list[dict]]:
 
     if not occurrence_ids:
         return {}
