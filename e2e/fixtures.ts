@@ -4,7 +4,7 @@ import {Events} from "./pages/Events";
 
 type Fixtures = {
     homePage: HomePage,
-    events: Events,
+    eventsPage: Events,
 }
 
 export const test = base.extend<Fixtures>({
@@ -14,7 +14,7 @@ export const test = base.extend<Fixtures>({
         await homePage.expectToBeShown();
         await use(homePage);
     },
-    events: async ({ page }, use) => {
+    eventsPage: async ({ page }, use) => {
         const events = new Events(page);
         await page.goto(events.url());
         await events.expectToBeShown();
