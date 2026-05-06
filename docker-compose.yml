@@ -1,53 +1,15 @@
 services:
 
   app:
-    build: .
+    image: ghcr.io/justforjan/klp:latest
     container_name: klp_app
     ports:
       - "8000:8000"
     env_file:
       - .env
-    environment:
-      DATABASE_HOST: klp_db
-      DATABASE_PORT: 5432
-      DATABASE_USERNAME: klp_user
-      DATABASE_PASSWORD: klp_password
-      DATABASE_NAME: klp_db
     depends_on:
       db:
         condition: service_healthy
-    develop:
-      watch:
-        - action: sync
-          path: templates/
-          target: /klp/templates/
-        - action: sync
-          path: static/
-          target: /klp/static/
-        - action: sync
-          path: app/
-          target: /klp/app/
-        - action: sync
-          path: main.py
-          target: /klp/main.py
-        - action: rebuild
-          path: .
-          ignore:
-            - main.py
-            - templates/**
-            - static/**
-            - app/**
-            - '**/*.py'
-            - '**/~*'
-            - '**/.#*'
-            - '**/*.swp'
-            - '**/*.swpx'
-            - '**/*.tmp'
-            - '**/.~lock.*'
-            - '**/.DS_Store'
-            - README.md
-            - .python-version
-            - uv.lock
 
   db:
     image: pgvector/pgvector:pg17
