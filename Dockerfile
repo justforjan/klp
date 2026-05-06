@@ -12,6 +12,8 @@ RUN npx @tailwindcss/cli -i ./static/src/input.css -o ./static/css/output.css
 
 FROM ghcr.io/astral-sh/uv:python3.12-alpine3.23
 
+LABEL org.opencontainers.image.source="https://github.com/justforjan/klp"
+
 WORKDIR /klp
 
 COPY uv.lock pyproject.toml ./
