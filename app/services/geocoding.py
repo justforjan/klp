@@ -2,7 +2,7 @@ import httpx
 import asyncio
 import re
 from urllib.parse import quote
-from sqlmodel import Session, select
+from sqlmodel import select
 from app.models.location import Location
 from app.core.database import get_session_ctx
 
