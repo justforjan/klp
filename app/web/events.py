@@ -65,9 +65,9 @@ async def events_page(
     )
 
     return templates.TemplateResponse(
+        request,
         "events.html",
         {
-            "request": request,
             "occurrences": pagination_data["occurrences"],
             "page": pagination_data["page"],
             "has_more": pagination_data["has_more"],
@@ -114,9 +114,9 @@ async def events_list_partial(
     )
 
     return templates.TemplateResponse(
+        request,
         "partials/event_list.html",
         {
-            "request": request,
             "occurrences": pagination_data["occurrences"],
             "page": pagination_data["page"],
             "has_more": pagination_data["has_more"],

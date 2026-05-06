@@ -13,9 +13,4 @@ async def favourites_page(
     request: Request,
     session: Session = Depends(get_session),
 ):
-    return templates.TemplateResponse(
-        "favourites.html",
-        {
-            "request": request,
-        },
-    )
+    return templates.TemplateResponse(request, "favourites.html")

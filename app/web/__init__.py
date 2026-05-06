@@ -20,7 +20,7 @@ router.include_router(favourites_router)
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html")
 
 
 @router.get("/map", response_class=HTMLResponse)
@@ -34,9 +34,9 @@ async def map_page(
     locations_without_coords = session.exec(query).all()
 
     return templates.TemplateResponse(
+        request,
         "map.html",
         {
-            "request": request,
             "locations_without_coords": locations_without_coords,
         },
     )

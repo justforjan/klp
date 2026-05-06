@@ -25,9 +25,9 @@ async def locations_page(
     locations = session.exec(query).all()
 
     return templates.TemplateResponse(
+        request,
         "locations.html",
         {
-            "request": request,
             "locations": locations,
         },
     )
@@ -44,8 +44,8 @@ async def location_detail_page(
     location = session.get(Location, location_id)
     if not location:
         return templates.TemplateResponse(
+            request,
             "404.html",
-            {"request": request},
             status_code=404,
         )
 
@@ -115,9 +115,9 @@ async def location_detail_page(
         })
 
     return templates.TemplateResponse(
+        request,
         "location_detail.html",
         {
-            "request": request,
             "location": location,
             "exhibitions": exhibitions,
             "events_by_date": events_by_date,
