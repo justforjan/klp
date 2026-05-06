@@ -1,4 +1,4 @@
-name: Tests
+name: CI
 
 on:
   push: {}
@@ -52,3 +52,27 @@ jobs:
 
       - name: Run tests
         run: uv run pytest tests
+
+  build:
+    name: Build and Push App Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Login to GitHub Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.KLP_PIPELINE_TEST_CR_PAT }}
+
+      - name: Build and Push
+        uses: docker/build-push-action@v7
+        with:
+          push: true
+          tags: ghcr.io/${{ github.actor }}/klp:latest
+
+
+
+
