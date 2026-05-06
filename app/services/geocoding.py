@@ -4,13 +4,13 @@ import re
 from urllib.parse import quote
 from sqlmodel import Session, select
 from app.models.location import Location
-from app.core.database import engine
+from app.core.database import get_session_ctx
 
 
 async def geocode_locations():
     print("Starting geocoding task for locations...")
 
-    with Session(engine) as session:
+    with get_session_ctx() as session:
         locations = session.exec(
             select(Location).where(
                 (Location.latitude == 0.0) | (Location.longitude == 0.0)
