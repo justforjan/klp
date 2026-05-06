@@ -16,7 +16,7 @@ class LocalTestSettings(LocalSettings):
     get_embeddings: bool = False
 
     start_date: str = "2024-07-01"
-    end_date: str = "2025-07-02"
+    end_date: str = "2024-07-02"
     year: int = 2024
 
     data_loader_type: Literal["test", "prod"] = "test"

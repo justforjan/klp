@@ -10,5 +10,5 @@ from app.config.local_test import LocalTestSettings as LocalTestSettings
 __all__ = ["settings", "AppSettings", "register_setting"]
 
 
-_env = os.getenv("ENV", "local_test")
+_env = os.getenv("ENV", "local")
 settings = _get_settings(_env)

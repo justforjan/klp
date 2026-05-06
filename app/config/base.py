@@ -21,9 +21,9 @@ class AppSettings(BaseSettings):
     run_geocode: bool = True
     get_embeddings: bool = True
     scrape_schedule: str = "0 6,18 * * *"
-    start_date: str = "2025-05-29"
-    end_date: str = "2025-06-09"
-    year: int = 2025
+    start_date: str = "2026-05-14"
+    end_date: str = "2026-05-25"
+    year: int = 2026
     data_loader_type: Literal["test", "prod"] = "prod"
 
     hf_access_token: str = "" # TODO: Remove the default value and handle it differenlty depending on the environment (prod, tests, pipeline)
