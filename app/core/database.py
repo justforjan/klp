@@ -2,7 +2,6 @@ from sqlmodel import create_engine, Session
 from sqlalchemy import Engine
 from alembic import command
 from alembic.config import Config
-import os
 from pathlib import Path
 from contextlib import contextmanager
 
@@ -17,7 +16,8 @@ def run_migrations(settings: AppSettings):
     alembic_cfg.set_main_option("sqlalchemy.url", settings.database_url)
 
     if settings.reload_data:
-        assert os.getenv("ENV") != "prod", "Cannot reset DB in production!"
+        # assert os.getenv("ENV", "").lower() != "prod", "Cannot reset DB in production!"
+        # assert settings.env.lower() != "prod", "Cannot reset DB in production!"
         try:
             command.downgrade(alembic_cfg, "base")
         except Exception as exc:

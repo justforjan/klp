@@ -19,17 +19,19 @@ class AppSettings(BaseSettings):
     debug: bool = False
     reload_data: bool = True
     run_geocode: bool = True
-    get_embeddings: bool = True
+    get_embeddings: bool = False
     scrape_schedule: str = "0 6,18 * * *"
     start_date: str = "2026-05-14"
     end_date: str = "2026-05-25"
     year: int = 2026
     data_loader_type: Literal["test", "prod"] = "prod"
 
-    hf_access_token: str = "" # TODO: Remove the default value and handle it differenlty depending on the environment (prod, tests, pipeline)
+    hf_access_token: str = "" # TODO: Remove the default value and handle it differently depending on the environment (prod, tests, pipeline)
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra='ignore')
+
+    env: str = ""
 
     @property
     def database_url(self) -> str:
-        return f"postgresql://{self.database_username}:{self.database_password}@{self.database_host}:{self.database_port}/{self.database_name}"
+        return rf"postgresql://{self.database_username}:{self.database_password}@{self.database_host}:{self.database_port}/{self.database_name}"

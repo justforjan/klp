@@ -1,0 +1,13 @@
+services:
+
+  app:
+    networks:
+      vps:
+
+  db:
+    networks:
+      vps:
+
+networks:
+  vps:
+    external: true

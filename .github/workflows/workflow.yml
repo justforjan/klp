@@ -73,6 +73,61 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.actor }}/klp:latest
 
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+
+      - name: Set up SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create Target Directory
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p klp"
+  
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Copy docker-compose.yml to VPS
+        run: |
+          scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:klp
+          scp -o StrictHostKeyChecking=no docker-compose.prod.yml ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:klp
+
+      - name: Deploy Application
+        env:
+          CR_PAT: ${{ secrets.KLP_PIPELINE_TEST_CR_PAT }}
+          GH_ACTOR: ${{ github.actor }}
+          DB_USER: ${{ secrets.DATABASE_USER }}
+          DB_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DB_NAME: ${{ secrets.DATABASE_NAME }}
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} \
+            CR_PAT="$CR_PAT" GH_ACTOR="$GH_ACTOR" \
+            DB_USER="$DB_USER" DB_PASSWORD="$DB_PASSWORD" DB_NAME="$DB_NAME" \
+            bash << 'EOF'
+            echo "$CR_PAT" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
+            cd klp
+            file=".env"
+            if [ -f $file ] ; then rm $file; fi
+            echo "DATABASE_USERNAME='$DB_USER'" >> $file
+            echo "DATABASE_PASSWORD='$DB_PASSWORD'" >> $file
+            echo "DATABASE_NAME='$DB_NAME'" >> $file
+            docker compose down
+            docker compose pull
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
+          EOF
+
+      - name: Cleanup SSH Key
+        run: rm -rf ~/.ssh
+
 
 
 

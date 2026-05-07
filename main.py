@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 import time
 import asyncio
 import uvicorn
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from app.config import settings
 from app.api import router as api_router
@@ -18,6 +19,7 @@ async def lifespan(app: FastAPI):
     print("Initializing database tables...")
     run_migrations(settings=settings)
 
+    print(f"DEBUG reload_data={settings.reload_data}, run_geocode={settings.run_geocode}")  # temporary
     try:
         if settings.reload_data:
             from app.services.scraper import get_scraper
@@ -54,6 +56,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(ProxyHeadersMiddleware, trusted_hosts="*")
 
 
 @app.middleware("http")

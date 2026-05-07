@@ -3,4 +3,5 @@ from app.config import AppSettings
 
 @register_setting("prod")
 class ProdSettings(AppSettings):
-    pass
+
+    reload_data: bool = False

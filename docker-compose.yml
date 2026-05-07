@@ -2,28 +2,35 @@ services:
 
   app:
     image: ghcr.io/justforjan/klp:latest
-    container_name: klp_app
+    container_name: klp-app
     ports:
       - "8000:8000"
     env_file:
       - .env
+    environment:
+      DATABASE_HOST: klp-db
+      DATABASE_PORT: 5432
+      ENV: prod
     depends_on:
       db:
         condition: service_healthy
+    restart: unless-stopped
 
   db:
     image: pgvector/pgvector:pg17
-    container_name: klp_db
+    container_name: klp-db
+    env_file:
+      - .env
     environment:
-      POSTGRES_USER: klp_user
-      POSTGRES_PASSWORD: klp_password
-      POSTGRES_DB: klp_db
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U klp_user -d klp_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USERNAME} -d ${DATABASE_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
