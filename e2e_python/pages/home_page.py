@@ -7,12 +7,14 @@ class HomePage(KLPPage):
     def __init__(self, page: Page):
         super().__init__(page)
         self.title = page.get_by_role("heading", name="Willkommen zur Kulturellen Landpartie")
+        self.events_button = page.get_by_role("link", name="Termine durchsuchen")
+        self.map_button = page.get_by_role("link", name="Karte ansehen")
 
     def url(self) -> str:
         return "/"
 
     def expect_to_be_shown(self) -> 'HomePage':
         expect(self.title).to_be_visible()
-        expect(self.page.get_by_role("link", name="Termine durchsuchen")).to_be_visible()
-        expect(self.page.get_by_role("link", name="Karte ansehen")).to_be_visible()
+        expect(self.events_button).to_be_visible()
+        expect(self.map_button).to_be_visible()
         return self
