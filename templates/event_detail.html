@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.name }} - Kulturelle Landpartie{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6">
+        <a href="/events" class="text-blue-600 hover:text-blue-800 hover:underline mb-2 inline-block">
+            ← Zurück zu allen Terminen
+        </a>
+        <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ event.name }}</h1>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        {% if event.description %}
+        <p class="text-gray-700 mb-4">{{ event.description }}</p>
+        {% endif %}
+
+        <div class="flex flex-wrap gap-2 mb-4">
+            {% if event.payment_type == 'free' %}
+            <span class="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded">Eintritt frei</span>
+            {% elif event.payment_type == 'hat_collection' %}
+            <span class="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded">Hutkasse</span>
+            {% elif event.payment_type == 'fixed_price' and event.entry_price %}
+            <span class="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded">{{ event.entry_price }} €</span>
+            {% elif event.payment_type == 'hat_plus_materials' %}
+            <span class="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded">
+                Hutkasse{% if event.material_cost %} + {{ event.material_cost }} € Material{% endif %}
+            </span>
+            {% endif %}
+
+            {% if event.booking_required %}
+            <span class="bg-purple-100 text-purple-800 text-sm font-medium px-3 py-1 rounded">Anmeldung erforderlich</span>
+            {% endif %}
+        </div>
+
+        <div class="space-y-2 text-sm text-gray-700">
+            {% if location %}
+            <div>
+                <span class="font-medium">Ort:</span>
+                <a href="/locations/{{ location.id }}" class="text-blue-600 hover:text-blue-800 hover:underline ml-1">{{ location.name }}</a>
+                {% if location.address %}<span class="text-gray-500 ml-1">– {{ location.address }}</span>{% endif %}
+            </div>
+            {% endif %}
+
+            {% if event.organizer %}
+            <div>
+                <span class="font-medium">Veranstalter:</span>
+                <span class="ml-1">{{ event.organizer }}</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">Termine</h2>
+
+        {% if occurrences %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {% for occurrence in occurrences %}
+            <div class="flex items-center justify-between p-4 rounded-lg border border-gray-200 {% if occurrence.is_cancelled %}bg-gray-50{% else %}bg-white{% endif %}">
+                <div class="flex items-center gap-4">
+                    <div class="{% if occurrence.is_cancelled %}bg-gray-200 text-gray-600{% else %}bg-blue-100 text-blue-800{% endif %} px-3 py-2 rounded-md text-center min-w-[90px]">
+                        <div class="text-xs font-medium">{{ occurrence.start_datetime.strftime('%d.%m.%Y') }}</div>
+                        <div class="text-lg font-bold">{{ occurrence.start_datetime.strftime('%H:%M') }}</div>
+                    </div>
+
+                    <div>
+                        {% if occurrence.end_datetime %}
+                        <div class="text-sm text-gray-600">
+                            bis {{ occurrence.end_datetime.strftime('%H:%M') }} Uhr
+                        </div>
+                        {% endif %}
+
+                        {% if occurrence.is_cancelled %}
+                        <span class="inline-block bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">
+                            Fällt leider aus
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button
+                        onclick="addToCalendar('{{ event.name|replace("'", "\\'") }}', '{{ occurrence.start_datetime.isoformat() }}', '{{ occurrence.end_datetime.isoformat() if occurrence.end_datetime else '' }}', '{{ location.address|replace("'", "\\'") if location and location.address else '' }}', '{{ event.description|replace("'", "\\'")|replace("\n", " ") if event.description else '' }}', '{{ event.organizer|replace("'", "\\'") if event.organizer else '' }}')"
+                        class="p-2 rounded-full hover:bg-gray-100 transition"
+                        title="Zum Kalender hinzufügen"
+                    >
+                        <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                    </button>
+                    <button
+                        onclick="toggleFavorite({{ occurrence.id }})"
+                        class="favorite-btn p-2 rounded-full hover:bg-gray-100 transition"
+                        data-event-id="{{ occurrence.id }}"
+                        title="Als Favorit markieren"
+                    >
+                        <svg class="w-6 h-6 text-gray-400 favorite-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-600">Keine Termine vorhanden.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function toggleFavorite(eventId) {
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        const index = favorites.indexOf(eventId);
+        const btn = document.querySelector(`button[data-event-id="${eventId}"]`);
+        const icon = btn.querySelector('.favorite-icon');
+
+        if (index > -1) {
+            favorites.splice(index, 1);
+            icon.classList.remove('text-red-500');
+            icon.classList.add('text-gray-400');
+            icon.setAttribute('fill', 'none');
+        } else {
+            favorites.push(eventId);
+            icon.classList.remove('text-gray-400');
+            icon.classList.add('text-red-500');
+            icon.setAttribute('fill', 'currentColor');
+        }
+
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        favorites.forEach(eventId => {
+            const btn = document.querySelector(`button[data-event-id="${eventId}"]`);
+            if (btn) {
+                const icon = btn.querySelector('.favorite-icon');
+                icon.classList.remove('text-gray-400');
+                icon.classList.add('text-red-500');
+                icon.setAttribute('fill', 'currentColor');
+            }
+        });
+    });
+</script>
+{% endblock %}
