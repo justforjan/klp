@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from playwright.sync_api import Page, expect
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 from pages.page_object import PageObject
 
 
-class KLPPage(ABC, PageObject):
+class KLPPage(PageObject):
 
     def __init__(self, page: Page):
         super().__init__(page)
