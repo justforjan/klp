@@ -24,9 +24,9 @@ class EventsPage(KLPPage):
         expect(self.events).to_have_count(nr)
         return self
 
-    def search(self, startDate: str, endDate: str, text: str, location: str, show_cancelled: str, entry_type: str) -> 'EventsPage':
-        self.form.get_by_label("Von Datum").fill(startDate)
-        self.form.get_by_label("Bis Datum").fill(endDate)
+    def search(self, start_date: str, end_date: str, text: str, location: str, show_cancelled: str, entry_type: str) -> 'EventsPage':
+        self.form.get_by_label("Von Datum").fill(start_date)
+        self.form.get_by_label("Bis Datum").fill(end_date)
         self.form.get_by_label("Suche").fill(text)
         self.form.get_by_label("Ort").fill(location)
         self.form.get_by_label("Abgesagte Termine").fill(show_cancelled)

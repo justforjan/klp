@@ -1,4 +1,4 @@
-from e2e_python.pages.klp_page import KLPPage
+from pages.klp_page import KLPPage
 
 from playwright.sync_api import Page, expect
 

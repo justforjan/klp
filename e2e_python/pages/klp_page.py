@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 from playwright.sync_api import Page, expect
 from abc import ABC, abstractmethod
 
-from e2e_python.pages.page_object import PageObject
-from pages.events_page import EventsPage
-from pages.home_page import HomePage
+from pages.page_object import PageObject
 
 
 class KLPPage(ABC, PageObject):
@@ -23,7 +23,6 @@ class KLPPage(ABC, PageObject):
 
     def expect_to_be_shown(self) -> 'KLPPage':
         expect(self.page).to_have_url(self.url())
-
         return self
 
     def navbar_is_shown(self) -> 'KLPPage':
@@ -34,16 +33,12 @@ class KLPPage(ABC, PageObject):
         expect(self.favorites).to_be_visible()
         return self
 
-    def go_to_home_page(self) -> HomePage:
+    def go_to_home_page(self) -> 'KLPPage':
         self.home.click()
-        home_page = HomePage(self.page)
-        home_page.expect_to_be_shown()
-        return home_page
+        return self
 
-    def go_to_events_page(self) -> EventsPage:
+
+    def go_to_events_page(self) -> 'KLPPage':
         self.events.click()
-        events_page = EventsPage(self.page)
-        events_page.expect_to_be_shown()
-        return events_page
-
+        return self
 
