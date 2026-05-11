@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+
+.warning-box {
+    @apply bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg shadow-md;
+}
+
+.info-box {
+    @apply bg-blue-100 border-l-4 border-solid border-blue-500 p-4 mb-6 rounded-lg shadow-md
+}
+
+

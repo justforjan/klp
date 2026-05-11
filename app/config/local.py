@@ -16,8 +16,8 @@ class LocalSettings(AppSettings):
 
     # Application configuration
     debug: bool = True
-    reload_data: bool = True
-    run_geocode: bool = True
+    reload_data: bool = False
+    run_geocode: bool = False
     get_embeddings: bool = False
 
     data_loader_type: Literal["test", "prod"] = "prod"
