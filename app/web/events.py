@@ -131,6 +131,37 @@ async def events_list_partial(
     )
 
 
+@router.get("/{event_id}", response_class=HTMLResponse)
+async def event_detail_page(
+    request: Request,
+    event_id: int,
+    session: Session = Depends(get_session),
+):
+    event = session.get(Event, event_id)
+    if not event:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    location = session.get(Location, event.location_id)
+
+    occurrences_query = (
+        select(EventOccurrence)
+        .where(EventOccurrence.event_id == event_id)
+        .order_by(EventOccurrence.start_datetime.asc())
+    )
+    occurrences = session.exec(occurrences_query).all()
+
+    return templates.TemplateResponse(
+        request,
+        "event_detail.html",
+        {
+            "event": event,
+            "location": location,
+            "occurrences": occurrences,
+        },
+    )
+
+
 def get_event_occurrences(
     session: Session,
     start_date: Optional[date] = None,
