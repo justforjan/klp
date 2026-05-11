@@ -9,7 +9,7 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <nav class="bg-white shadow-md mb-6">
+    <nav id="navbar" class="bg-white shadow-md fixed top-0 left-0 right-0 z-50" style="transition: transform 0.3s ease;">
         <div class="container mx-auto px-4">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center">
@@ -41,7 +41,7 @@
         </div>
     </nav>
 
-    <main class="container mx-auto px-4 pb-8">
+    <main class="container mx-auto px-4 pb-8 pt-22">
         {% block content %}{% endblock %}
     </main>
 
@@ -50,6 +50,21 @@
             const menu = document.getElementById('mobile-menu');
             menu.classList.toggle('hidden');
         });
+
+        (function() {
+            const navbar = document.getElementById('navbar');
+            let lastScrollY = window.scrollY;
+
+            window.addEventListener('scroll', function() {
+                const currentScrollY = window.scrollY;
+                if (currentScrollY < lastScrollY) {
+                    navbar.style.transform = 'translateY(0)';
+                } else if (currentScrollY > navbar.offsetHeight) {
+                    navbar.style.transform = 'translateY(-100%)';
+                }
+                lastScrollY = currentScrollY;
+            }, { passive: true });
+        })();
 
         function addToCalendar(eventName, startDatetime, endDatetime, location, description, organizer) {
             const formatDate = (dateStr) => {
