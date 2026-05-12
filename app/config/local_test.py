@@ -1,5 +1,6 @@
 from app.config.local import LocalSettings
 from app.config.register_settings import register_setting
+
 try:
     from typing import Literal
 except Exception:
@@ -8,7 +9,6 @@ except Exception:
 
 @register_setting("local_test")
 class LocalTestSettings(LocalSettings):
-
     # Application configuration
     debug: bool = True
     reload_data: bool = True

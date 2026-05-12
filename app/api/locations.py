@@ -9,13 +9,16 @@ from app.models.location import Location
 
 router = APIRouter(prefix="/locations", tags=["locations"])
 
+
 @router.get("/search")
 async def search_locations(
     q: str = Query("", min_length=0),
     session: Session = Depends(get_session),
 ):
     if not q or len(q.strip()) == 0:
-        locations = session.exec(select(Location).order_by(Location.name.asc()).limit(10)).all()
+        locations = session.exec(
+            select(Location).order_by(Location.name.asc()).limit(10)
+        ).all()
     else:
         query = (
             select(Location)
@@ -25,10 +28,13 @@ async def search_locations(
         )
         locations = session.exec(query).all()
 
-    return JSONResponse([
-        {"id": loc.id, "name": loc.name, "subtitle": loc.subtitle}
-        for loc in locations
-    ])
+    return JSONResponse(
+        [
+            {"id": loc.id, "name": loc.name, "subtitle": loc.subtitle}
+            for loc in locations
+        ]
+    )
+
 
 @router.get("/map")
 async def get_map_locations(
@@ -37,27 +43,24 @@ async def get_map_locations(
     query = (
         select(Location, func.count(Event.id).label("event_count"))
         .outerjoin(Event, Location.id == Event.location_id)
-        .where(
-            and_(
-                Location.latitude != 0.0,
-                Location.longitude != 0.0
-            )
-        )
+        .where(and_(Location.latitude != 0.0, Location.longitude != 0.0))
         .group_by(Location.id)
         .order_by(Location.name.asc())
     )
 
     results = session.exec(query).all()
 
-    return JSONResponse([
-        {
-            "id": location.id,
-            "name": location.name,
-            "subtitle": location.subtitle,
-            "address": location.address,
-            "latitude": location.latitude,
-            "longitude": location.longitude,
-            "event_count": event_count,
-        }
-        for location, event_count in results
-    ])
+    return JSONResponse(
+        [
+            {
+                "id": location.id,
+                "name": location.name,
+                "subtitle": location.subtitle,
+                "address": location.address,
+                "latitude": location.latitude,
+                "longitude": location.longitude,
+                "event_count": event_count,
+            }
+            for location, event_count in results
+        ]
+    )

@@ -6,6 +6,7 @@ except ImportError:
     from typing_extensions import Literal
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 @register_setting("base")
 class AppSettings(BaseSettings):
     # Database configuration
@@ -26,9 +27,11 @@ class AppSettings(BaseSettings):
     year: int = 2026
     data_loader_type: Literal["test", "prod"] = "prod"
 
-    hf_access_token: str = "" # TODO: Remove the default value and handle it differently depending on the environment (prod, tests, pipeline)
+    hf_access_token: str = ""  # TODO: Remove the default value and handle it differently depending on the environment (prod, tests, pipeline)
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra='ignore')
+    model_config = SettingsConfigDict(
+        env_file=".env", case_sensitive=False, extra="ignore"
+    )
 
     env: str = ""
 

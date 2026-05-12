@@ -28,14 +28,17 @@ async def events_page(
     page: int = Query(1, ge=1),
     session: Session = Depends(get_session),
 ):
-    has_query_params = any(param is not None for param in [
-        request.query_params.get('start_date'),
-        request.query_params.get('end_date'),
-        request.query_params.get('search'),
-        request.query_params.get('show_cancelled'),
-        request.query_params.get('payment_types'),
-        request.query_params.get('location_id')
-    ])
+    has_query_params = any(
+        param is not None
+        for param in [
+            request.query_params.get("start_date"),
+            request.query_params.get("end_date"),
+            request.query_params.get("search"),
+            request.query_params.get("show_cancelled"),
+            request.query_params.get("payment_types"),
+            request.query_params.get("location_id"),
+        ]
+    )
 
     if not has_query_params:
         start_date = settings.start_date
@@ -44,10 +47,16 @@ async def events_page(
         start_date = start_date or ""
         end_date = end_date or ""
 
-    parsed_start_date = None if not start_date or start_date.strip() == "" else date.fromisoformat(start_date)
-    parsed_end_date = None if not end_date or end_date.strip() == "" else date.fromisoformat(end_date)
+    parsed_start_date = (
+        None
+        if not start_date or start_date.strip() == ""
+        else date.fromisoformat(start_date)
+    )
+    parsed_end_date = (
+        None if not end_date or end_date.strip() == "" else date.fromisoformat(end_date)
+    )
 
-    payment_types_list = payment_types.split(',') if payment_types else None
+    payment_types_list = payment_types.split(",") if payment_types else None
 
     selected_location = None
     if location_id:
@@ -61,7 +70,7 @@ async def events_page(
         page,
         show_cancelled=show_cancelled,
         payment_types=payment_types_list,
-        location_id=location_id
+        location_id=location_id,
     )
 
     return templates.TemplateResponse(
@@ -97,10 +106,16 @@ async def events_list_partial(
     page: int = Query(1, ge=1),
     session: Session = Depends(get_session),
 ):
-    parsed_start_date = None if not start_date or start_date.strip() == "" else date.fromisoformat(start_date)
-    parsed_end_date = None if not end_date or end_date.strip() == "" else date.fromisoformat(end_date)
+    parsed_start_date = (
+        None
+        if not start_date or start_date.strip() == ""
+        else date.fromisoformat(start_date)
+    )
+    parsed_end_date = (
+        None if not end_date or end_date.strip() == "" else date.fromisoformat(end_date)
+    )
 
-    payment_types_list = payment_types.split(',') if payment_types else None
+    payment_types_list = payment_types.split(",") if payment_types else None
 
     pagination_data = get_event_occurrences(
         session,
@@ -110,7 +125,7 @@ async def events_list_partial(
         page,
         show_cancelled=show_cancelled,
         payment_types=payment_types_list,
-        location_id=location_id
+        location_id=location_id,
     )
 
     return templates.TemplateResponse(
@@ -140,6 +155,7 @@ async def event_detail_page(
     event = session.get(Event, event_id)
     if not event:
         from fastapi import HTTPException
+
         raise HTTPException(status_code=404, detail="Event not found")
 
     location = session.get(Location, event.location_id)
@@ -194,7 +210,7 @@ def get_event_occurrences(
         search_filter = or_(
             # Event.embedding.cosine_distance(search_embedding) < 0.35,
             Event.name.ilike(f"%{search}%"),
-            Event.description.ilike(f"%{search}%")
+            Event.description.ilike(f"%{search}%"),
         )
         filters.append(search_filter)
 
@@ -205,10 +221,10 @@ def get_event_occurrences(
         filters.append(Event.location_id == location_id)
 
     if show_cancelled == "only":
-        filters.append(EventOccurrence.is_cancelled == True) #noqa
+        filters.append(EventOccurrence.is_cancelled == True)  # noqa
 
     if show_cancelled == "hide":
-        filters.append(EventOccurrence.is_cancelled == False) #noqa
+        filters.append(EventOccurrence.is_cancelled == False)  # noqa
 
     if filters:
         base_query = base_query.where(and_(*filters))
@@ -234,11 +250,13 @@ def get_event_occurrences(
     event_ids = set()
 
     for occurrence, event, location in results:
-        occurrences.append({
-            "occurrence": occurrence,
-            "event": event,
-            "location": location,
-        })
+        occurrences.append(
+            {
+                "occurrence": occurrence,
+                "event": event,
+                "location": location,
+            }
+        )
         event_ids.add(event.id)
 
     all_occurrences_map = {}
@@ -259,7 +277,8 @@ def get_event_occurrences(
         occurrence = item["occurrence"]
         event = item["event"]
         other_occurrences = [
-            occ for occ in all_occurrences_map.get(event.id, [])
+            occ
+            for occ in all_occurrences_map.get(event.id, [])
             if occ.id != occurrence.id
         ]
         item["other_occurrences"] = other_occurrences

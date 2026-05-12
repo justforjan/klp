@@ -19,6 +19,7 @@ dependencies = [
     "reportlab>=4.4.9",
     "pgvector>=0.4.2",
     "huggingface-hub>=1.4.1",
+    "playwright>=1.59.0",
 ]
 
 [dependency-groups]
@@ -27,4 +28,10 @@ dev = [
     "black>=24.8.0",
     "ruff>=0.6.0",
     "testcontainers[postgres]>=4.14.1",
+    "pytest-playwright>=0.7.2",
 ]
+
+[tool.pytest.ini_options]
+base_url = "http://localhost:8000"
+testpaths = ["tests", "e2e/tests"]
+pythonpath = [".", "e2e"]

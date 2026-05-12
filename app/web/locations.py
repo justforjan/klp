@@ -49,10 +49,13 @@ async def location_detail_page(
             status_code=404,
         )
 
-    has_query_params = any(param is not None for param in [
-        request.query_params.get('start_date'),
-        request.query_params.get('end_date')
-    ])
+    has_query_params = any(
+        param is not None
+        for param in [
+            request.query_params.get("start_date"),
+            request.query_params.get("end_date"),
+        ]
+    )
 
     if not has_query_params:
         start_date = settings.start_date
@@ -61,8 +64,14 @@ async def location_detail_page(
         start_date = start_date or ""
         end_date = end_date or ""
 
-    parsed_start_date = None if not start_date or start_date.strip() == "" else date.fromisoformat(start_date)
-    parsed_end_date = None if not end_date or end_date.strip() == "" else date.fromisoformat(end_date)
+    parsed_start_date = (
+        None
+        if not start_date or start_date.strip() == ""
+        else date.fromisoformat(start_date)
+    )
+    parsed_end_date = (
+        None if not end_date or end_date.strip() == "" else date.fromisoformat(end_date)
+    )
 
     query = (
         select(EventOccurrence, Event)
@@ -109,10 +118,12 @@ async def location_detail_page(
         if event_date not in events_by_date:
             events_by_date[event_date] = []
 
-        events_by_date[event_date].append({
-            "occurrence": occurrence,
-            "event": event,
-        })
+        events_by_date[event_date].append(
+            {
+                "occurrence": occurrence,
+                "event": event,
+            }
+        )
 
     return templates.TemplateResponse(
         request,

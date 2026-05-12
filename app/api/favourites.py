@@ -18,7 +18,7 @@ async def get_favourite_events(
     session: Session = Depends(get_session),
 ):
     try:
-        occurrence_ids = [int(id_str) for id_str in ids.split(',') if id_str.strip()]
+        occurrence_ids = [int(id_str) for id_str in ids.split(",") if id_str.strip()]
     except ValueError:
         return JSONResponse({})
 
@@ -35,7 +35,7 @@ async def export_favourites_pdf(
     exhibitions_by_location = {}
 
     try:
-        occurrence_ids = [int(id_str) for id_str in ids.split(',') if id_str.strip()]
+        occurrence_ids = [int(id_str) for id_str in ids.split(",") if id_str.strip()]
     except ValueError:
         occurrence_ids = []
 
@@ -43,7 +43,9 @@ async def export_favourites_pdf(
 
     if exhibition_ids:
         try:
-            exhibition_id_list = [int(id_str) for id_str in exhibition_ids.split(',') if id_str.strip()]
+            exhibition_id_list = [
+                int(id_str) for id_str in exhibition_ids.split(",") if id_str.strip()
+            ]
             if exhibition_id_list:
                 query = (
                     select(Exhibition, Location)
@@ -62,16 +64,18 @@ async def export_favourites_pdf(
                                 "name": location.name,
                                 "subtitle": location.subtitle,
                             },
-                            "exhibitions": []
+                            "exhibitions": [],
                         }
 
-                    exhibitions_by_location[location_key]["exhibitions"].append({
-                        "id": exhibition.id,
-                        "name": exhibition.name,
-                        "description": exhibition.description,
-                        "artist": exhibition.artist,
-                        "artist_page_url": exhibition.artist_page_url,
-                    })
+                    exhibitions_by_location[location_key]["exhibitions"].append(
+                        {
+                            "id": exhibition.id,
+                            "name": exhibition.name,
+                            "description": exhibition.description,
+                            "artist": exhibition.artist,
+                            "artist_page_url": exhibition.artist_page_url,
+                        }
+                    )
         except ValueError:
             pass
 
@@ -85,11 +89,13 @@ async def export_favourites_pdf(
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"attachment; filename=favoriten_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        }
+        },
     )
 
 
-def get_favourite_events_data(occurrence_ids: list[int], session: Session) -> dict[str, list[dict]]:
+def get_favourite_events_data(
+    occurrence_ids: list[int], session: Session
+) -> dict[str, list[dict]]:
 
     if not occurrence_ids:
         return {}
@@ -109,32 +115,39 @@ def get_favourite_events_data(occurrence_ids: list[int], session: Session) -> di
         if event_date not in events_by_date:
             events_by_date[event_date] = []
 
-        events_by_date[event_date].append({
-            "occurrence": {
-                "id": occurrence.id,
-                "start_datetime": occurrence.start_datetime.isoformat(),
-                "is_cancelled": occurrence.is_cancelled,
-            },
-            "event": {
-                "name": event.name,
-                "description": event.description,
-                "payment_type": event.payment_type,
-                "entry_price": float(event.entry_price) if event.entry_price else None,
-                "material_cost": float(event.material_cost) if event.material_cost else None,
-                "booking_required": event.booking_required,
-                "organizer": event.organizer,
-            },
-            "location": {
-                "id": location.id,
-                "name": location.name,
-                "subtitle": location.subtitle,
-                "address": location.address,
-                "phone": location.phone,
-                "email": location.email,
+        events_by_date[event_date].append(
+            {
+                "occurrence": {
+                    "id": occurrence.id,
+                    "start_datetime": occurrence.start_datetime.isoformat(),
+                    "is_cancelled": occurrence.is_cancelled,
+                },
+                "event": {
+                    "name": event.name,
+                    "description": event.description,
+                    "payment_type": event.payment_type,
+                    "entry_price": float(event.entry_price)
+                    if event.entry_price
+                    else None,
+                    "material_cost": float(event.material_cost)
+                    if event.material_cost
+                    else None,
+                    "booking_required": event.booking_required,
+                    "organizer": event.organizer,
+                },
+                "location": {
+                    "id": location.id,
+                    "name": location.name,
+                    "subtitle": location.subtitle,
+                    "address": location.address,
+                    "phone": location.phone,
+                    "email": location.email,
+                },
             }
-        })
+        )
 
     return events_by_date
+
 
 @router.get("/exhibitions")
 async def get_favourite_exhibitions(
@@ -145,7 +158,7 @@ async def get_favourite_exhibitions(
         return JSONResponse({})
 
     try:
-        exhibition_ids = [int(id_str) for id_str in ids.split(',') if id_str.strip()]
+        exhibition_ids = [int(id_str) for id_str in ids.split(",") if id_str.strip()]
     except ValueError:
         return JSONResponse({})
 
@@ -170,16 +183,18 @@ async def get_favourite_exhibitions(
                     "name": location.name,
                     "subtitle": location.subtitle,
                 },
-                "exhibitions": []
+                "exhibitions": [],
             }
 
-        exhibitions_by_location[location_key]["exhibitions"].append({
-            "id": exhibition.id,
-            "name": exhibition.name,
-            "description": exhibition.description,
-            "artist": exhibition.artist,
-            "artist_page_url": exhibition.artist_page_url,
-            "image_path": exhibition.image_path,
-        })
+        exhibitions_by_location[location_key]["exhibitions"].append(
+            {
+                "id": exhibition.id,
+                "name": exhibition.name,
+                "description": exhibition.description,
+                "artist": exhibition.artist,
+                "artist_page_url": exhibition.artist_page_url,
+                "image_path": exhibition.image_path,
+            }
+        )
 
     return JSONResponse(exhibitions_by_location)
