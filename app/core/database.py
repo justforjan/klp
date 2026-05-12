@@ -7,6 +7,7 @@ from contextlib import contextmanager
 
 from app.config import AppSettings
 
+
 def run_migrations(settings: AppSettings):
 
     project_root = Path(__file__).resolve().parents[2]
@@ -21,14 +22,18 @@ def run_migrations(settings: AppSettings):
         try:
             command.downgrade(alembic_cfg, "base")
         except Exception as exc:
-            raise RuntimeError(f"Failed to downgrade database during reset: {exc}") from exc
+            raise RuntimeError(
+                f"Failed to downgrade database during reset: {exc}"
+            ) from exc
 
     try:
         command.upgrade(alembic_cfg, "head")
     except Exception as exc:
         raise RuntimeError(f"Failed to run alembic migrations: {exc}") from exc
 
+
 _engine: Engine | None = None
+
 
 def init_engine(settings: AppSettings) -> None:
     global _engine
@@ -39,6 +44,7 @@ def init_engine(settings: AppSettings) -> None:
         max_overflow=20,
         pool_pre_ping=True,
     )
+
 
 def get_engine() -> Engine:
     assert _engine is not None, "Engine not initialized. Call init_engine() at startup."
@@ -54,4 +60,3 @@ def get_session():
 def get_session_ctx():
     with Session(get_engine()) as session:
         yield session
-

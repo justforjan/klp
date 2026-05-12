@@ -10,11 +10,14 @@ from app.schemas.event import EventOccurrenceResponse, EventResponse, LocationRe
 
 router = APIRouter(prefix="/events", tags=["events"])
 
+
 @router.get("/occurrences", response_model=list[EventOccurrenceResponse])
 def list_event_occurrences(
     start_date: Optional[date] = Query(None, description="Filter by start date"),
     end_date: Optional[date] = Query(None, description="Filter by end date"),
-    search: Optional[str] = Query(None, description="Search in event name or description"),
+    search: Optional[str] = Query(
+        None, description="Search in event name or description"
+    ),
     session: Session = Depends(get_session),
 ):
     query = (
@@ -35,8 +38,7 @@ def list_event_occurrences(
 
     if search:
         search_filter = or_(
-            Event.name.ilike(f"%{search}%"),
-            Event.description.ilike(f"%{search}%")
+            Event.name.ilike(f"%{search}%"), Event.description.ilike(f"%{search}%")
         )
         filters.append(search_filter)
 

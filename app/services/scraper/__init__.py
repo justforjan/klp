@@ -4,6 +4,7 @@ from app.services.scraper.test_data_scraper import TestDataScraper
 
 __all__ = ["get_scraper"]
 
+
 def get_scraper(scraper_type: str) -> BaseScraper:
     if scraper_type == "test":
         return TestDataScraper()
@@ -11,6 +12,3 @@ def get_scraper(scraper_type: str) -> BaseScraper:
         return KLPScraper()
     else:
         raise ValueError(f"Invalid data_loader_type: {scraper_type}")
-
-
-

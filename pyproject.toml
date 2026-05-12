@@ -33,5 +33,5 @@ dev = [
 
 [tool.pytest.ini_options]
 base_url = "http://localhost:8000"
-testpaths = ["tests", "e2e_python/tests"]
-pythonpath = [".", "e2e_python"]
+testpaths = ["tests", "e2e/tests"]
+pythonpath = [".", "e2e"]

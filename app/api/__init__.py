@@ -9,5 +9,3 @@ router = APIRouter(prefix="/api", tags=["api"])
 router.include_router(events_router)
 router.include_router(favourites_router)
 router.include_router(locations_router)
-
-

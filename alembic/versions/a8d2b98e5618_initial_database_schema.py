@@ -1,10 +1,11 @@
 """Initial database schema
 
 Revision ID: a8d2b98e5618
-Revises: 
+Revises:
 Create Date: 2026-02-03 23:19:04.659816
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -14,7 +15,7 @@ from pgvector.sqlalchemy import Vector
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'a8d2b98e5618'
+revision: str = "a8d2b98e5618"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -26,60 +27,68 @@ def upgrade() -> None:
 
     op.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
-    op.create_table('location',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('subtitle', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('address', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('phone', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('email', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('latitude', sa.Float(), nullable=False),
-    sa.Column('longitude', sa.Float(), nullable=False),
-    sa.Column('google_maps_link', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('original_page_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('image_path', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('links', sa.ARRAY(sa.String()), nullable=True),
-    sa.Column('bike_tour', sa.Integer(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    op.create_table(
+        "location",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("subtitle", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("address", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("phone", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("email", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("latitude", sa.Float(), nullable=False),
+        sa.Column("longitude", sa.Float(), nullable=False),
+        sa.Column(
+            "google_maps_link", sqlmodel.sql.sqltypes.AutoString(), nullable=True
+        ),
+        sa.Column(
+            "original_page_url", sqlmodel.sql.sqltypes.AutoString(), nullable=True
+        ),
+        sa.Column("image_path", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("links", sa.ARRAY(sa.String()), nullable=True),
+        sa.Column("bike_tour", sa.Integer(), nullable=True),
+        sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f('ix_location_name'), 'location', ['name'], unique=False)
+    op.create_index(op.f("ix_location_name"), "location", ["name"], unique=False)
 
-    op.create_table('event',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('location_id', sa.Integer(), nullable=False),
-    sa.Column('payment_type', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('entry_price', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('material_cost', sa.Numeric(precision=10, scale=2), nullable=True),
-    sa.Column('booking_required', sa.Boolean(), nullable=False),
-    sa.Column('organizer', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('embedding', Vector(768), nullable=True),
-    sa.ForeignKeyConstraint(['location_id'], ['location.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    op.create_table(
+        "event",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("description", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("location_id", sa.Integer(), nullable=False),
+        sa.Column("payment_type", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("entry_price", sa.Numeric(precision=10, scale=2), nullable=True),
+        sa.Column("material_cost", sa.Numeric(precision=10, scale=2), nullable=True),
+        sa.Column("booking_required", sa.Boolean(), nullable=False),
+        sa.Column("organizer", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("embedding", Vector(768), nullable=True),
+        sa.ForeignKeyConstraint(["location_id"], ["location.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f('ix_event_name'), 'event', ['name'], unique=False)
+    op.create_index(op.f("ix_event_name"), "event", ["name"], unique=False)
 
-    op.create_table('event_occurrence',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('event_id', sa.Integer(), nullable=False),
-    sa.Column('start_datetime', sa.DateTime(), nullable=False),
-    sa.Column('end_datetime', sa.DateTime(), nullable=True),
-    sa.Column('is_cancelled', sa.Boolean(), nullable=False),
-    sa.ForeignKeyConstraint(['event_id'], ['event.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    op.create_table(
+        "event_occurrence",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("event_id", sa.Integer(), nullable=False),
+        sa.Column("start_datetime", sa.DateTime(), nullable=False),
+        sa.Column("end_datetime", sa.DateTime(), nullable=True),
+        sa.Column("is_cancelled", sa.Boolean(), nullable=False),
+        sa.ForeignKeyConstraint(["event_id"], ["event.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
     )
 
-    op.create_table('exhibition',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('artist', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-    sa.Column('artist_page_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('image_path', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('location_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['location_id'], ['location.id'], ondelete='CASCADE'),
-    sa.PrimaryKeyConstraint('id')
+    op.create_table(
+        "exhibition",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("name", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("description", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("artist", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+        sa.Column("artist_page_url", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("image_path", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column("location_id", sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(["location_id"], ["location.id"], ondelete="CASCADE"),
+        sa.PrimaryKeyConstraint("id"),
     )
     # ### end Alembic commands ###
 
@@ -87,11 +96,11 @@ def upgrade() -> None:
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_table('exhibition')
-    op.drop_table('event_occurrence')
-    op.drop_index(op.f('ix_event_name'), table_name='event')
-    op.drop_table('event')
-    op.drop_index(op.f('ix_location_name'), table_name='location')
-    op.drop_table('location')
+    op.drop_table("exhibition")
+    op.drop_table("event_occurrence")
+    op.drop_index(op.f("ix_event_name"), table_name="event")
+    op.drop_table("event")
+    op.drop_index(op.f("ix_location_name"), table_name="location")
+    op.drop_table("location")
     op.execute("DROP EXTENSION IF EXISTS vector")
     # ### end Alembic commands ###

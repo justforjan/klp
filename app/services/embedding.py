@@ -10,18 +10,14 @@ __all__ = ["get_embedding", "add_embeddings"]
 
 _model_id = "ibm-granite/granite-embedding-278m-multilingual"
 
-_hf_client = InferenceClient(
-    model=_model_id,
-    token=settings.hf_access_token
-)
+_hf_client = InferenceClient(model=_model_id, token=settings.hf_access_token)
+
 
 def add_embeddings():
     print("Starting embedding task for events...")
 
     with Session(engine) as session:
-        events = session.exec(
-            select(Event).where(Event.embedding is None)
-        ).all()
+        events = session.exec(select(Event).where(Event.embedding is None)).all()
 
     if not events:
         print("No events need embeddings")

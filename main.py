@@ -11,29 +11,36 @@ from app.api import router as api_router
 from app.core.database import get_engine
 from app.web import router as web_router
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     from app.core.database import run_migrations, init_engine
+
     print("Initializing database engine...")
     init_engine(settings)
     print("Initializing database tables...")
     run_migrations(settings=settings)
 
-    print(f"DEBUG reload_data={settings.reload_data}, run_geocode={settings.run_geocode}")  # temporary
+    print(
+        f"DEBUG reload_data={settings.reload_data}, run_geocode={settings.run_geocode}"
+    )  # temporary
     try:
         if settings.reload_data:
             from app.services.scraper import get_scraper
+
             scraper = get_scraper(settings.data_loader_type)
             print("Starting data import...")
             await scraper.run_initial_import()
 
         if settings.run_geocode:
             from app.services.geocoding import geocode_locations
+
             print("Starting geocoding...")
             asyncio.create_task(geocode_locations())
 
         if settings.get_embeddings:
             from app.services.embedding import add_embeddings
+
             print("Starting embeddings...")
             add_embeddings()
             print("Embeddings completed")
@@ -41,6 +48,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"Error during startup: {e}")
         import traceback
+
         traceback.print_exc()
 
     yield
@@ -83,7 +91,9 @@ async def log_requests(request: Request, call_next):
     if request.url.query:
         url += f"?{request.url.query}"
 
-    print(f"{color}{request.method}{reset} {url} - {response.status_code} - {process_time:.3f}s")
+    print(
+        f"{color}{request.method}{reset} {url} - {response.status_code} - {process_time:.3f}s"
+    )
 
     return response
 

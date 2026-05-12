@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from playwright.sync_api import Page
 
-class PageObject(ABC):
 
+class PageObject(ABC):
     def __init__(self, page: Page):
         self.page = page
 
@@ -11,5 +11,5 @@ class PageObject(ABC):
         pass
 
     @abstractmethod
-    def expect_to_be_shown(self) -> 'PageObject':
+    def expect_to_be_shown(self) -> "PageObject":
         pass

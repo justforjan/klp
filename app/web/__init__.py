@@ -18,6 +18,7 @@ router.include_router(events_router)
 router.include_router(locations_router)
 router.include_router(favourites_router)
 
+
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     return templates.TemplateResponse(request, "index.html")
@@ -28,9 +29,11 @@ async def map_page(
     request: Request,
     session: Session = Depends(get_session),
 ):
-    query = select(Location).where(
-        (Location.latitude == 0.0) | (Location.longitude == 0.0)
-    ).order_by(Location.name.asc())
+    query = (
+        select(Location)
+        .where((Location.latitude == 0.0) | (Location.longitude == 0.0))
+        .order_by(Location.name.asc())
+    )
     locations_without_coords = session.exec(query).all()
 
     return templates.TemplateResponse(

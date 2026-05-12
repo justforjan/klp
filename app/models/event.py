@@ -28,7 +28,9 @@ class Event(SQLModel, table=True):
     description: Optional[str] = Field(default=None)
     location_id: int = Field(foreign_key="location.id", ondelete="CASCADE")
     payment_type: str = Field(default="free")
-    entry_price: Optional[Decimal] = Field(default=None, max_digits=10, decimal_places=2)
+    entry_price: Optional[Decimal] = Field(
+        default=None, max_digits=10, decimal_places=2
+    )
     material_cost: Optional[Decimal] = Field(
         default=None, max_digits=10, decimal_places=2
     )

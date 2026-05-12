@@ -8,6 +8,7 @@ from app.core.database import get_session
 router = APIRouter(prefix="/favourites", tags=["locations"])
 templates = Jinja2Templates(directory="templates")
 
+
 @router.get("", response_class=HTMLResponse)
 async def favourites_page(
     request: Request,

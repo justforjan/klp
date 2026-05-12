@@ -1,8 +1,9 @@
-
 _SETTINGS_CLASS_MAP = {}
+
 
 def list_settings():
     return list(_SETTINGS_CLASS_MAP.keys())
+
 
 def register_setting(name: str):
 
@@ -13,6 +14,7 @@ def register_setting(name: str):
         return setting_class
 
     return wrapper
+
 
 def _get_settings(env: str):
     setting = _SETTINGS_CLASS_MAP.get(env)
