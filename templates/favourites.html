@@ -4,19 +4,33 @@
 
 {% block content %}
 <div class="max-w-6xl mx-auto">
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <h1 class="text-3xl font-bold text-gray-900">Meine Favoriten</h1>
-        <button
-            id="export-pdf-btn"
-            onclick="exportToPdf()"
-            disabled
-            class="bg-gray-300 text-gray-500 px-6 py-2 rounded-md cursor-not-allowed flex items-center gap-2 transition"
-        >
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            Als PDF exportieren
-        </button>
+        <div class="flex flex-row gap-3 justify-between sm:justify-end">
+            <button
+                    id="export-pdf-btn"
+                    onclick="exportToPdf()"
+                    disabled
+                    class="bg-gray-300 text-gray-500 px-6 py-2 rounded-md cursor-not-allowed flex items-center gap-2 transition"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                Als PDF exportieren
+            </button>
+            <button
+                    id="delete-favourites-btn"
+                    onclick="deleteFavourites()"
+                    class="bg-gray-300 text-gray-500 px-6 py-2 rounded-md cursor-not-allowed flex items-center gap-2 transition"
+            >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                </svg>
+                Alle Favoriten entfernen
+            </button>
+        </div>
     </div>
 
     <div id="favourites-content">
@@ -38,10 +52,13 @@
         const exhibitionFavorites = JSON.parse(localStorage.getItem('exhibition_favorites') || '[]');
         const contentDiv = document.getElementById('favourites-content');
         const exportBtn = document.getElementById('export-pdf-btn');
+        const deleteFavouritesBtn = document.getElementById('delete-favourites-btn')
 
         if (favorites.length === 0 && exhibitionFavorites.length === 0) {
             exportBtn.disabled = true;
             exportBtn.className = 'bg-gray-300 text-gray-500 px-6 py-2 rounded-md cursor-not-allowed flex items-center gap-2 transition';
+            deleteFavouritesBtn.disabled = true;
+            deleteFavouritesBtn.className = 'bg-gray-300 text-gray-500 px-6 py-2 rounded-md cursor-not-allowed flex items-center gap-2 transition';
             contentDiv.innerHTML = `
                 <div class="bg-white rounded-lg shadow-md p-12 text-center">
                     <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,6 +74,9 @@
 
         exportBtn.disabled = false;
         exportBtn.className = 'bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2';
+
+        deleteFavouritesBtn.disabled = false;
+        deleteFavouritesBtn.className = 'bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center gap-2';
 
         let html = '';
 
@@ -325,6 +345,16 @@
 
         const url = `/api/favourites/pdf?ids=${favorites.join(',')}&exhibition_ids=${exhibitionFavorites.join(',')}`;
         window.open(url, '_blank');
+    }
+
+    function deleteFavourites() {
+        const deleteFavoritesBtn = document.getElementById('delete-favourites-btn')
+
+        localStorage.removeItem('favorites')
+        localStorage.removeItem('exhibition_favourites')
+
+        loadFavourites()
+
     }
 
     document.addEventListener('DOMContentLoaded', loadFavourites);
